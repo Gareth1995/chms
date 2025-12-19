@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: Make the background light gray like your screenshots */
+body {
+  background-color: #F3F4F6;
+}
