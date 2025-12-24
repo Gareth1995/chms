@@ -1,7 +1,9 @@
 import React from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 
 const Login = () => {
+    const navigate = useNavigate();
     return (
         <Card title="Welcome" subTitle="Sign into your ChMS">
             <div className='flex flex-col gap-4'>
@@ -20,6 +22,10 @@ const Login = () => {
 
                 <button className='bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700'>
                     Sign In
+                </button>
+
+                <button onClick={() => navigate('/Signup')} className='bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700'>
+                    Register
                 </button>
             </div>
         </Card> 
