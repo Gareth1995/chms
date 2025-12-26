@@ -1,19 +1,43 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../../components/ui/Card'
+import { registerUser } from '../../services/api';
 
 const Signup = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
+    // Setting state for all fields
+    const [formData, setFormData] = useState({
+        firstName: '',
+        lastName: '',
+        nationality: '',
+        role:'',
+        cell: '',
+        email: '',
+        password: ''
+    });
+
     const handleChange = (e) => {
-        console.log({[e.target.name] : e.value});
+        // console.log({[e.target.name] : e.value});
+        setFormData({...formData, [e.target.name]: e.target.value})
     }
 
-    const handleSignup = (e) => {
+    const handleSignup = async (e) => {
         e.preventDefault();
-        console.log(e);
-        // console.log('submit clicked');
+        setLoading(true);
+
+        // Call our API
+        const result = await registerUser(formData);
+
+        setLoading(false);
+
+        if (result.status === 'success') {
+        alert("Account created! Please log in.");
+        navigate('/login');
+        } else {
+        alert("Error: " + result.message);
+        }
     }
 
     return (
