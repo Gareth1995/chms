@@ -27,7 +27,7 @@ const Login = () => {
 
             // go to app
             alert("Login Successful: " + result.message);
-            // { add navigation code here}
+            navigate('/dashboard');
         } else {
             alert("Login Failed: " + result.message);
         }
