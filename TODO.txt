@@ -1,3 +1,5 @@
 - Add member functionality (done)
+    - Make member ID a hex of first name + surname
+    - Add backend code to calculate age given DOB
 - Add view member functionality
     - Use ActionBar from ChakraUI for member table for CRUD actions (https://chakra-ui.com/docs/components/table#action-bar)
