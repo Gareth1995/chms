@@ -1,0 +1,4 @@
+- Make sure email check is not case sensitive
+- After register go straight into app
+- remove popups after login and register
+- Secure routes so that a user cannot get into any blocked pages without logging in
