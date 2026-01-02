@@ -131,7 +131,8 @@ const AddMember = () => {
           <label className="text-xs font-bold text-gray-500 uppercase">Date of Birth</label>
           <input 
             name="dob" type="date" required value={formData.dob} onChange={handleChange}
-            className="w-full p-3 border rounded-lg mt-1"
+            // className="w-full p-3 border rounded-lg mt-1"
+            className="w-full max-w-full block box-border p-3 border rounded-lg mt-1"
           />
         </div>
 
