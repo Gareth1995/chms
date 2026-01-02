@@ -1,10 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../../components/ui/Card'
-import { registerUser } from '../../services/api';
+import { registerUser, loginUser } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext'
+
 
 const Signup = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [loading, setLoading] = useState(false);
 
     // Setting state for all fields
@@ -30,14 +33,25 @@ const Signup = () => {
         // Call our API
         const result = await registerUser(formData);
 
-        setLoading(false);
-
         if (result.status === 'success') {
-        alert("Account created! Please log in.");
-        navigate('/login');
+            
+            // Call login api
+            const login_result = await loginUser(formData.email, formData.password);
+
+            if (login_result.status === 'success') {
+                // save user to global context
+                login(login_result.user);
+
+                // go to app
+                navigate('/dashboard');
+            } else {
+                alert("Login Failed: " + login_result.message);
+            }
         } else {
-        alert("Error: " + result.message);
+            alert("Error: " + result.message);
         }
+
+        setLoading(false);
     }
 
     return (
@@ -78,7 +92,7 @@ const Signup = () => {
                     type='submit'
                     disabled={loading}
                 >
-                    {loading ? 'Creating Account...' : 'Sign Up'}
+                    {loading ? 'Creating Account and Signing In...' : 'Sign Up'}
                 </button>
 
             </form>
