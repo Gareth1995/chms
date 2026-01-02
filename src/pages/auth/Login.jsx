@@ -26,19 +26,17 @@ const Login = () => {
             login(result.user);
 
             // go to app
-            alert("Login Successful: " + result.message);
             navigate('/dashboard');
         } else {
             alert("Login Failed: " + result.message);
         }
 
         setLoading(false);
-
     };
 
     return (
         <Card title="Welcome" subTitle="Sign into your ChMS">
-            <div className='flex flex-col gap-4'>
+            <form onSubmit={handleLogin} className='flex flex-col gap-4'>
                 <input
                     type='email'
                     placeholder='pastor@church.com'
@@ -55,13 +53,9 @@ const Login = () => {
                     required
                 />
 
-                <button onClick={handleLogin} className='bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700'>
+                <button type="submit" className='bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700'>
                     {loading ? "Signing In..." : "Sign In"}
                 </button>
-
-                {/* <button onClick={() => navigate('/Signup')} className='bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700'>
-                    Register
-                </button> */}
 
                 <div className="text-center mt-4 text-sm text-gray-600">
                     Don't have an account?{' '}
@@ -69,7 +63,7 @@ const Login = () => {
                         Sign up
                     </Link>
                 </div>
-            </div>
+            </form>
         </Card> 
     );
 };
