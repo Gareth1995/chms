@@ -41,4 +41,20 @@ export const loginUser = async (email, password) => {
         console.error("Login failed:", error);
         return { status: "error", message: "Network error" };
     }
-}
+};
+
+export const addMember = async (memberData) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addMember",
+        ...memberData // This spreads all the fields (firstName, gender, etc.)
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Add member failed:", error);
+    return { status: "error", message: "Network error" };
+  }
+};

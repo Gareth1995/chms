@@ -1,1 +1,3 @@
-- Add member functionality
+- Add member functionality (done)
+- Add view member functionality
+    - Use ActionBar from ChakraUI for member table for CRUD actions (https://chakra-ui.com/docs/components/table#action-bar)

@@ -34,9 +34,19 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
 
+    if (action == "loginUser") {
+      console.log('User Logging In...');
+      return loginUser(data);
+    }
+
     if (action == "registerUser") {
-      console.log('Registering User...')
+      console.log('Registering User...');
       return registerUser(data);
+    }
+
+    if (action == "addMember") {
+      console.log('Adding member...');
+      return addMember(data);
     }
 
     if (action === "saveAttendance") {
@@ -117,6 +127,79 @@ function registerUser(data){
   return sendJSON({ status: "success", memberId: newId });
 }
 
+function loginUser(data) {
+  const sheet = ss.getSheetByName("Users");
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const emailIndex = headers.indexOf("email"); 
+  const passIndex = headers.indexOf("password"); 
+  
+  // 1. Find the user by email
+  // We skip row 0 (headers)
+  // const userRow = rows.slice(1).find(r => r[emailIndex] === data.email);
+  const userRow = rows.slice(1).find(r => 
+    String(r[emailIndex]).toLowerCase() === String(data.email).toLowerCase()
+  );
+
+  if (!userRow) {
+    return sendJSON({ status: "error", message: "User not found" });
+  }
+
+  // 2. Hash the input password to see if it matches the stored hash
+  const inputHash = Utilities.base64Encode(
+    Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, data.password)
+  );
+  
+  const storedHash = userRow[passIndex];
+
+  if (inputHash === storedHash) {
+    // 3. Success! Return user info (BUT NOT THE PASSWORD)
+    return sendJSON({
+      status: "success",
+      user: {
+        id: userRow[0],
+        firstName: userRow[1],
+        lastName: userRow[2],
+        role: userRow[4]
+      }
+    });
+  } else {
+    return sendJSON({ status: "error", message: "Incorrect password" });
+  }
+}
+
+function addMember(data) {
+  const sheet = ss.getSheetByName("Members");
+  const rows = sheet.getDataRange().getValues();
+  
+  // 1. Check for duplicate email
+  const emailIndex = rows[0].indexOf("email_address");
+  const emailExists = rows.slice(1).some(r => String(r[emailIndex]).toLowerCase() === String(data.email).toLowerCase());
+  if (emailExists) return sendJSON({ status: "error", message: "Duplicate email. Cannot add member" });
+
+  // 2. Generate ID
+  let maxId = 0;
+  if (rows.length > 1) maxId = Math.max(...rows.slice(1).map(r => Number(r[0]) || 0));
+  const newId = maxId + 1;
+
+  // 3. Append Row (Matches your new columns)
+  // Order: id, first, last, nationality, role, email, cell, password, gender, dob
+  sheet.appendRow([
+    newId,
+    data.firstName,
+    data.lastName,
+    data.nationality,
+    data.gender,
+    data.role,
+    data.email,
+    data.cell,
+    data.dob         
+  ]);
+
+  return sendJSON({ status: "success", memberId: newId });
+}
+
 // testing functions
 // testing registration
 function testRegistrationLogic() {
@@ -141,3 +224,44 @@ function testRegistrationLogic() {
   doPost(mockEvent);
 }
 
+// testing registration
+function testLoginLogic() {
+  // 1. Create fake data (mocking what React would send)
+  const mockEvent = {
+    postData: {
+      contents: JSON.stringify({
+        action: "loginUser",
+        email: "gareth.reeve50@gmail.com",
+        password: "password123"
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockEvent);
+}
+
+// testing adding a member
+function testAddMember() {
+  // 1. Create fake data (mocking what React would send)
+  const mockmember = {
+    postData: {
+      contents: JSON.stringify({
+        action: "addMember",
+        firstName: "Member",
+        lastName: "NumberOne",
+        nationality: "South African",
+        gender: "Female",
+        role: "Member",
+        email: "member01@gmail.com",
+        cell: "079123456",
+        dob: "2025-10-04"  
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockmember);
+}
