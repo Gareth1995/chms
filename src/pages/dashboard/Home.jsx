@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
+import SettingsMenu from '../../components/ui/SettingsMenu';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -12,16 +13,6 @@ const Home = () => {
     logout(); // Clear user state
     navigate('/login'); // Redirect to login page
   };
-
-  // A small component for the "Logout" link
-  const LogoutButton = () => (
-    <button 
-      onClick={handleLogout}
-      className="text-blue-500 text-sm font-semibold hover:underline"
-    >
-      Logout
-    </button>
-  );
 
   // Simple SVG icons for the menu items
   const AttendanceIcon = () => (
@@ -41,7 +32,7 @@ const Home = () => {
       // Display user's first name, fallback to 'User' if not available
       title={`Hello, ${user?.firstName || 'User'}`}
       // Pass our LogoutButton component to the Card header
-      actionComponent={<LogoutButton />}
+      actionComponent={<SettingsMenu onLogout={handleLogout}/>}
     >
       <div>
         <h3 className="text-lg font-bold text-gray-700 mb-4">Main Menu</h3>
@@ -49,7 +40,7 @@ const Home = () => {
           
           {/* 1. Member Attendance Button (Active) */}
           <button 
-            variant="outline" 
+            // variant="outline" 
             onClick={() => navigate('/dashboard')}
             // Custom Tailwind classes to match the design
             className="!bg-blue-50 !border-blue-200 text-left flex items-center gap-4 hover:!bg-blue-100 transition-colors p-4"
