@@ -183,7 +183,24 @@ function addMember(data) {
   if (rows.length > 1) maxId = Math.max(...rows.slice(1).map(r => Number(r[0]) || 0));
   const newId = maxId + 1;
 
-  // 3. Append Row (Matches your new columns)
+  // 3. Calculate age
+  let age = ""; // Default to empty if no DOB provided
+  if (data.dob) {
+    const birthDate = new Date(data.dob);
+    const today = new Date();
+    
+    age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    
+    // If the current month is before the birth month, 
+    // or it is the birth month but the day hasn't happened yet, subtract 1 year
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+  };
+  
+
+  // 4. Append Row (Matches your new columns)
   // Order: id, first, last, nationality, role, email, cell, password, gender, dob
   sheet.appendRow([
     newId,
@@ -194,7 +211,8 @@ function addMember(data) {
     data.role,
     data.email,
     data.cell,
-    data.dob         
+    data.dob,
+    age         
   ]);
 
   return sendJSON({ status: "success", memberId: newId });
