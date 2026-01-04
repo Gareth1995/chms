@@ -58,3 +58,18 @@ export const addMember = async (memberData) => {
     return { status: "error", message: "Network error" };
   }
 };
+
+export const getMembers = async () => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getMembers"
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Get members failed:", error);
+    return { status: "error", message: "Network error" };
+  }
+};

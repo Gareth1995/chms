@@ -1,4 +1,5 @@
 - Add member functionality (done)
     - Add backend code to calculate age given DOB (done)
-- Add view member functionality
-    - Use ActionBar from ChakraUI for member table for CRUD actions (https://chakra-ui.com/docs/components/table#action-bar)
+- Add view member functionality (done)
+    - Use ActionBar from ChakraUI for member table for CRUD actions (https://chakra-ui.com/docs/components/table#action-bar) (done)
+    - Implement delete functionality
