@@ -4,6 +4,7 @@ import Signup from "./pages/auth/Signup";
 import Home from './pages/dashboard/Home';
 import AddMember from "./pages/dashboard/addMember";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import Members from "./pages/dashboard/members";
 
 function App() {
     return (
@@ -18,7 +19,8 @@ function App() {
                     <ProtectedRoute>
                     <Home />
                     </ProtectedRoute>
-                }/>
+                    }
+                />
                 
                 <Route 
                     path="/members/add" 
@@ -27,7 +29,16 @@ function App() {
                         <AddMember />
                         </ProtectedRoute>
                     } 
-                    />
+                />
+
+                <Route 
+                    path="/members" 
+                    element={
+                        <ProtectedRoute>
+                        <Members />
+                        </ProtectedRoute>
+                    } 
+                />
 
                 <Route path="/" element={<Navigate to="/login" replace/>}/>
             </Routes>
