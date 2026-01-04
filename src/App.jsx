@@ -4,7 +4,7 @@ import Signup from "./pages/auth/Signup";
 import Home from './pages/dashboard/Home';
 import AddMember from "./pages/dashboard/addMember";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
-import Members from "./pages/dashboard/members";
+import Members from "./pages/dashboard/Members";
 
 function App() {
     return (
