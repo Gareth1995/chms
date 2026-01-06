@@ -318,11 +318,11 @@ const Members = () => {
               </ActionBar.SelectionTrigger>
               <ActionBar.Separator />
               <Button variant="outline" size="sm">
-                Delete <Kbd>⌫</Kbd>
+                Update <Kbd>⌫</Kbd>
               </Button>
-              <Button variant="outline" size="sm">
+              {/* <Button variant="outline" size="sm">
                 Share <Kbd>T</Kbd>
-              </Button>
+              </Button> */}
             </ActionBar.Content>
           </ActionBar.Positioner>
         </Portal>

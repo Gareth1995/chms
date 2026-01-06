@@ -49,6 +49,11 @@ function doPost(e) {
       return addMember(data);
     }
 
+    if (action == "getMembers") {
+      console.log('Getting members...');
+      return getMembers(data);
+    }
+
     if (action === "saveAttendance") {
       const sheet = ss.getSheetByName("Attendance");
       const timestamp = new Date();
@@ -178,10 +183,15 @@ function addMember(data) {
   const emailExists = rows.slice(1).some(r => String(r[emailIndex]).toLowerCase() === String(data.email).toLowerCase());
   if (emailExists) return sendJSON({ status: "error", message: "Duplicate email. Cannot add member" });
 
-  // 2. Generate ID
-  let maxId = 0;
-  if (rows.length > 1) maxId = Math.max(...rows.slice(1).map(r => Number(r[0]) || 0));
-  const newId = maxId + 1;
+  // 2. Generate ID (hex of first name + last name)
+  const fullName = `${data.email}${data.dob}`
+    .trim()
+    .toLowerCase();
+
+  // Convert hash to hex string
+  const member_id = Utilities.base64Encode(
+    Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, fullName)
+  );
 
   // 3. Calculate age
   let age = ""; // Default to empty if no DOB provided
@@ -198,12 +208,15 @@ function addMember(data) {
       age--;
     }
   };
-  
 
-  // 4. Append Row (Matches your new columns)
+  // 4. Calculate timestamp
+  const timestampISO = new Date().toISOString();
+
+
+  // 5. Append Row (Matches your new columns)
   // Order: id, first, last, nationality, role, email, cell, password, gender, dob
   sheet.appendRow([
-    newId,
+    member_id,
     data.firstName,
     data.lastName,
     data.nationality,
@@ -212,10 +225,39 @@ function addMember(data) {
     data.email,
     data.cell,
     data.dob,
-    age         
+    age,
+    "",
+    timestampISO
   ]);
 
-  return sendJSON({ status: "success", memberId: newId });
+  return sendJSON({ status: "success", memberId: member_id });
+}
+
+function getMembers() {
+  const sheet = ss.getSheetByName("Members");
+  const data = sheet.getDataRange().getValues(); // This gets a 2D array [[Headers], [Row1], [Row2]]
+  
+  // 1. Remove the first row (headers) so we don't treat "First Name" as a person
+  const headers = data.shift(); 
+
+  // 2. Loop through the remaining rows and format them as objects
+  const members = data.map(row => ({
+    id: row[0],
+    firstName: row[1],
+    lastName: row[2],
+    nationality: row[3],
+    gender: row[4],
+    role: row[5],
+    email: row[6],
+    cell: row[7],
+    // Note: row[8] appeared twice in your snippet as gender and DOB. 
+    // I assumed index 8 is DOB and 9 is Age based on standard ordering. Check your sheet columns!
+    dob: row[8], 
+    age: row[9]
+  }));
+
+  // 3. Return the LIST of members
+  return sendJSON({ status: "success", members: members });
 }
 
 // testing functions
@@ -267,12 +309,12 @@ function testAddMember() {
     postData: {
       contents: JSON.stringify({
         action: "addMember",
-        firstName: "Member",
+        firstName: "Membero",
         lastName: "NumberOne",
         nationality: "South African",
         gender: "Female",
         role: "Member",
-        email: "member01@gmail.com",
+        email: "member05@gmail.com",
         cell: "079123456",
         dob: "2025-10-04"  
       })
@@ -282,4 +324,20 @@ function testAddMember() {
   // 2. Call your main function directly
   // const result = doPost(mockEvent);
   doPost(mockmember);
+}
+
+// testing getting members
+function testGetMembers() {
+  // 1. Create fake data (mocking what React would send)
+  const getMemTest = {
+    postData: {
+      contents: JSON.stringify({
+        action: "getMembers" 
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(getMemTest);
 }
