@@ -2,4 +2,19 @@
     - Add backend code to calculate age given DOB (done)
 - Add view member functionality (done)
     - Use ActionBar from ChakraUI for member table for CRUD actions (https://chakra-ui.com/docs/components/table#action-bar) (done)
-    - Implement delete functionality
+    - Hex dob and email to create member_id (done)
+    - Implement update functionality
+
+
+Update functionality steps:
+- When adding member add to both Members and Updates Tables.
+- When doing an update on the Members view:
+    
+    - First pull in row details of the member from the Members table 
+    (we will use the member_id as target for updating and add it to update table upload for consistent member_id across all tables)
+    
+    - Do an update on the Members table.
+    
+    - Do an add member to the Updates table.
+
+
