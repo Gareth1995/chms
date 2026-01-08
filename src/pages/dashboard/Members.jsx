@@ -317,12 +317,20 @@ const Members = () => {
                 {selection.length} selected
               </ActionBar.SelectionTrigger>
               <ActionBar.Separator />
-              <Button variant="outline" size="sm">
-                Update <Kbd>⌫</Kbd>
+              <Button 
+                size="sm"
+                bg="blue.600"             // Explicit Blue Background
+                color="white"             // Explicit White Text
+                _hover={{ bg: "blue.700" }} // Darker blue on hover
+                boxShadow="md"
+                px={6} 
+                gap={3} 
+                onClick={() => {
+                  navigate('/members/update');
+                }}
+              >
+                Update 
               </Button>
-              {/* <Button variant="outline" size="sm">
-                Share <Kbd>T</Kbd>
-              </Button> */}
             </ActionBar.Content>
           </ActionBar.Positioner>
         </Portal>
