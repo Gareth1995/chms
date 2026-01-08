@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import { addMember } from '../../services/api';
 
 const UpdateMember = () => {
+    const { state } = useLocation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+
+    const selectedMembers = state?.selectedMembers || [];
+    console.log("Members passed to update page:", selectedMembers);
 
     const [formData, setFormData] = useState({
         firstName: '',
