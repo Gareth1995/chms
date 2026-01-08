@@ -7,7 +7,7 @@
 
 
 Update functionality steps:
-- When adding member add to both Members and Updates Tables.
+- When adding member add to both Members and Updates Tables. (done)
 - When doing an update on the Members view:
     
     - First pull in row details of the member from the Members table 

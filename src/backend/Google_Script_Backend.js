@@ -176,6 +176,7 @@ function loginUser(data) {
 
 function addMember(data) {
   const sheet = ss.getSheetByName("Members");
+  const updates_sheet = ss.getSheetByName("Updates");
   const rows = sheet.getDataRange().getValues();
   
   // 1. Check for duplicate email
@@ -216,6 +217,22 @@ function addMember(data) {
   // 5. Append Row (Matches your new columns)
   // Order: id, first, last, nationality, role, email, cell, password, gender, dob
   sheet.appendRow([
+    member_id,
+    data.firstName,
+    data.lastName,
+    data.nationality,
+    data.gender,
+    data.role,
+    data.email,
+    data.cell,
+    data.dob,
+    age,
+    "",
+    timestampISO
+  ]);
+
+  // 6. Append row to the Updates table also
+  updates_sheet.appendRow([
     member_id,
     data.firstName,
     data.lastName,
@@ -314,7 +331,7 @@ function testAddMember() {
         nationality: "South African",
         gender: "Female",
         role: "Member",
-        email: "member05@gmail.com",
+        email: "member07@gmail.com",
         cell: "079123456",
         dob: "2025-10-04"  
       })
