@@ -9,18 +9,26 @@ const UpdateMember = () => {
     const [loading, setLoading] = useState(false);
 
     const selectedMembers = state?.selectedMembers || [];
-    console.log("Members passed to update page:", selectedMembers);
+
+    const formatDateForInput = (dob) => {
+        if (!dob) return "";
+
+        const date = new Date(dob);
+        return date.toISOString().split("T")[0];
+    };
 
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        nationality: '',
-        gender: 'Male', // Default
-        role: 'Member', // Default
-        email: '',
-        cell: '',
-        dob: ''
+        firstName: selectedMembers[0].firstName,
+        lastName: selectedMembers[0].lastName,
+        nationality: selectedMembers[0].nationality,
+        gender: selectedMembers[0].gender,
+        role: selectedMembers[0].role,
+        email: selectedMembers[0].email,
+        cell: selectedMembers[0].cell,
+        dob: formatDateForInput(selectedMembers[0].dob)
     });
+
+    console.log(formData);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -50,8 +58,8 @@ const UpdateMember = () => {
 
     return (
         <Card 
-        title="Add New Member" 
-        subTitle="Enter member details below"
+        title="Update a Member" 
+        subTitle="Enter member details to update below"
         backAction={() => navigate('/members')} // Arrow goes straight to dashboard
         >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -146,7 +154,7 @@ const UpdateMember = () => {
             disabled={loading}
             className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold hover:bg-blue-700 shadow-md transition-all active:scale-95 mt-2"
             >
-            {loading ? "Saving..." : "Add Member"}
+            {loading ? "Saving..." : "Update Member"}
             </button>
 
         </form>

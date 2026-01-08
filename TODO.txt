@@ -17,4 +17,4 @@ Update functionality steps:
     
     - Do an add member to the Updates table.
 
-
+- Implement update funtion in backend
