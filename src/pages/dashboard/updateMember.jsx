@@ -29,7 +29,7 @@ const UpdateMember = () => {
         cell: selectedMembers[0].cell,
         dob: formatDateForInput(selectedMembers[0].dob),
         age: selectedMembers[0].age,
-        update_reason: "default"
+        updateReason: ""
     });
     
     console.log(formData);
@@ -48,7 +48,7 @@ const UpdateMember = () => {
         setLoading(false);
 
         if (result.status === 'success') {
-            alert("Member added successfully!");
+            alert("Member info updated successfully!");
             // navigate back to members page
             navigate('/members')
         }
@@ -143,6 +143,14 @@ const UpdateMember = () => {
                 name="dob" type="date" required value={formData.dob} onChange={handleChange}
                 // className="w-full p-3 border rounded-lg mt-1"
                 className="w-full max-w-full block box-border p-3 border rounded-lg mt-1 appearance-none bg-white"
+            />
+            </div>
+
+            <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">Update Reason</label>
+            <textarea 
+                name="updateReason" required value={formData.updateReason} onChange={handleChange}
+                className="w-full p-3 border rounded-lg mt-1" placeholder="What did you update?"
             />
             </div>
 
