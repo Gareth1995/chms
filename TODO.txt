@@ -5,7 +5,9 @@
     - Hex dob and email to create member_id (done)
     - Implement update functionality
 
-
+======================================================
+Feature: Update members
+======================================================
 Update functionality steps:
 - When adding member add to both Members and Updates Tables. (done)
 - When doing an update on the Members view:
@@ -20,4 +22,29 @@ Update functionality steps:
 
 - Implement update funtion in backend
     - Add member updates (done)
-    - Update member table
+    - Update member table (done)
+
+======================================================
+Feature: Track attendance
+======================================================
+From "track attendance" settings menu:
+-> Page that asks for event specifics
+    - Drop down of events (empty initially but will pull event names from Events table)
+    - Have a "+ Add event" as one of the drop down options
+    - Also have - sign next to each event so that it allows for deletion (only on front end edit on_frontend column)
+    - Allow text to be typed and when enter is pressed it will save that event to an Events table on the backend.
+    - Also ask for event date
+
+-> Page like Members page where you can select rows and submit attendance.
+    - Heading of Card will say "Track attendance for {event name}"
+    - Selecting multiple individuals (from Member table) and submitting attendance
+      will work even for dupes but backend just won't save dupes. This way you can also add attendance after the event
+      by selecting track attendance in settings -> select the correct event name and date -> tick missed row -> submit again
+
+Output to the Attendance table will be:
+member_id | event_name | status | timestamp
+
+Event table will have the following:
+event_id | event_name | on_frontend
+Where event id will be in the form e{date}{5 digit random salt} eg e2026011109874
+on_frontend determines if it is seen on the frontend or not
