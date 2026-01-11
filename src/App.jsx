@@ -5,6 +5,7 @@ import Home from './pages/dashboard/Home';
 import AddMember from "./pages/dashboard/addMember";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Members from "./pages/dashboard/Members";
+import UpdateMember from "./pages/dashboard/updateMember";
 
 function App() {
     return (
@@ -27,6 +28,15 @@ function App() {
                     element={
                         <ProtectedRoute>
                         <AddMember />
+                        </ProtectedRoute>
+                    } 
+                />
+
+                <Route 
+                    path="/members/update" 
+                    element={
+                        <ProtectedRoute>
+                        <UpdateMember />
                         </ProtectedRoute>
                     } 
                 />
