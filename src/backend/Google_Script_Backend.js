@@ -49,6 +49,11 @@ function doPost(e) {
       return addMember(data);
     }
 
+    if (action == "addMemberUpdate") {
+      console.log('Updating members...');
+      return addMemberUpdates(data);
+    }
+
     if (action == "getMembers") {
       console.log('Getting members...');
       return getMembers(data);
@@ -277,6 +282,90 @@ function getMembers() {
   return sendJSON({ status: "success", members: members });
 }
 
+function addMemberUpdates(data) {
+  const updates_sheet = ss.getSheetByName("Updates");
+
+  // Adding update row to the Updates table for audit tracking
+  // 1. Calculate timestamp
+  const timestampISO = new Date().toISOString();
+  
+
+  // 2. Append row to the Updates table also
+  updates_sheet.appendRow([
+    data.member_id,
+    data.firstName,
+    data.lastName,
+    data.nationality,
+    data.gender,
+    data.role,
+    data.email,
+    data.cell,
+    data.dob,
+    data.age,
+    data.updateReason,
+    timestampISO
+  ]);
+
+  // Updating the Member table accordingly
+  updateMember(data);
+
+  return sendJSON({ status: "success", memberId: data.member_id });
+}
+
+function updateMember(data) {
+  const sheet = ss.getSheetByName("Members");
+
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  const headers = values[0];
+
+  const idIndex = headers.indexOf("member_id");
+
+  // 1. Find row index of the member
+  const rowIndex = values.findIndex((row, i) => i > 0 && row[idIndex] === data.member_id);
+
+  if (rowIndex === -1) {
+    return sendJSON({ status: "error", message: "Member not found" });
+  }
+
+  // 2. Calculate age again if DOB changed
+  // let age = values[rowIndex][headers.indexOf("age")];
+  // if (data.dob) {
+  //   const birthDate = new Date(data.dob);
+  //   const today = new Date();
+  //   age = today.getFullYear() - birthDate.getFullYear();
+  //   const m = today.getMonth() - birthDate.getMonth();
+  //   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+  //     age--;
+  //   }
+  // }
+
+  // 3. Build updated row (match column order exactly)
+  const updatedRow = [
+    data.member_id,
+    data.firstName,
+    data.lastName,
+    data.nationality,
+    data.gender,
+    data.role,
+    data.email,
+    data.cell,
+    data.dob,
+    data.age,
+    data.updateReason || "Profile update",
+    new Date().toISOString()
+  ];
+
+  // 4. Update Members sheet
+  sheet.getRange(rowIndex + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
+
+  return sendJSON({
+    status: "success",
+    message: "Member updated successfully",
+    memberId: data.id
+  });
+}
+
 // testing functions
 // testing registration
 function testRegistrationLogic() {
@@ -320,6 +409,33 @@ function testLoginLogic() {
 }
 
 // testing adding a member
+function testAddMemberUpdates() {
+  // 1. Create fake data (mocking what React would send)
+  const mockmember = {
+    postData: {
+      contents: JSON.stringify({
+        action: "addMemberUpdate",
+        member_id: "poqiwmnenyeyq76=",
+        firstName: "Positive",
+        lastName: "Luke",
+        nationality: "Greek",
+        gender: "Male",
+        role: "Deacon",
+        email: "LukeP@gmail.com",
+        cell: "0797711121",
+        dob: "2025-06-06",
+        age: "20",
+        updateReason: "Change to password"
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockmember);
+}
+
+// testing adding a member updates
 function testAddMember() {
   // 1. Create fake data (mocking what React would send)
   const mockmember = {
@@ -357,4 +473,30 @@ function testGetMembers() {
   // 2. Call your main function directly
   // const result = doPost(mockEvent);
   doPost(getMemTest);
+}
+
+function testUpdateMember(){
+  // 1. Create fake data (mocking what React would send)
+  const mockmember = {
+    postData: {
+      contents: JSON.stringify({
+        action: "addMemberUpdate",
+        member_id: "4yPnGfHsY1jH/F8cqlBiYQdqhHZmWnuKDDmxtr2947c=",
+        firstName: "Membero",
+        lastName: "NumberOne",
+        nationality: "South African",
+        gender: "Female",
+        role: "Member",
+        email: "member07@gmail.com",
+        cell: "333333333333",
+        dob: "2025-10-04",
+        age: 0,
+        updateReason: "Updated phone number"  
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockmember);
 }
