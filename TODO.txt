@@ -15,6 +15,9 @@ Update functionality steps:
     
     - Do an update on the Members table.
     
-    - Do an add member to the Updates table.
+    - Do an add member to the Updates table. (done)
+        - Add update reason field on update members page
 
 - Implement update funtion in backend
+    - Add member updates (done)
+    - Update member table

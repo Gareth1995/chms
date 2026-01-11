@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Card from '../../components/ui/Card';
-import { addMember } from '../../services/api';
+import { addMemberUpdates } from '../../services/api';
 
 const UpdateMember = () => {
     const { state } = useLocation();
@@ -9,6 +9,7 @@ const UpdateMember = () => {
     const [loading, setLoading] = useState(false);
 
     const selectedMembers = state?.selectedMembers || [];
+    console.log(selectedMembers);
 
     const formatDateForInput = (dob) => {
         if (!dob) return "";
@@ -18,6 +19,7 @@ const UpdateMember = () => {
     };
 
     const [formData, setFormData] = useState({
+        member_id: selectedMembers[0].id,
         firstName: selectedMembers[0].firstName,
         lastName: selectedMembers[0].lastName,
         nationality: selectedMembers[0].nationality,
@@ -25,10 +27,13 @@ const UpdateMember = () => {
         role: selectedMembers[0].role,
         email: selectedMembers[0].email,
         cell: selectedMembers[0].cell,
-        dob: formatDateForInput(selectedMembers[0].dob)
+        dob: formatDateForInput(selectedMembers[0].dob),
+        age: selectedMembers[0].age,
+        update_reason: "default"
     });
-
+    
     console.log(formData);
+
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -38,21 +43,14 @@ const UpdateMember = () => {
         e.preventDefault();
         setLoading(true);
 
-        const result = await addMember(formData);
+        const result = await addMemberUpdates(formData);
 
         setLoading(false);
 
         if (result.status === 'success') {
-        alert("Member added successfully!");
-        // Option A: Clear form to add another
-        setFormData({
-            firstName: '', lastName: '', nationality: '', gender: 'Male', 
-            role: 'Member', email: '', cell: '', dob: ''
-        });
-        // Option B: Go back to dashboard (Uncomment next line if preferred)
-        // navigate('/dashboard');
-        } else {
-        alert("Error: " + result.message);
+            alert("Member added successfully!");
+            // navigate back to members page
+            navigate('/members')
         }
     };
 

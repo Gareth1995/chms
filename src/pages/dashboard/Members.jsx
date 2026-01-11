@@ -70,10 +70,10 @@ const Members = () => {
                   : selection.filter((id) => id !== memberId),
               )
 
-              console.log("Row toggled:", {
-                checked: changes.checked,
-                member,
-              });
+              // console.log("Row toggled:", {
+              //   checked: changes.checked,
+              //   member,
+              // });
             }}
           >
             <Checkbox.HiddenInput />
@@ -168,9 +168,9 @@ const Members = () => {
 
                 onClick={() => {
                   const selectedMembers = members.filter((member, index) => {
-                  const memberId = member.id || member.email || index;
-                  return selection.includes(memberId);
-                });
+                    const memberId = member.id || member.email || index;
+                    return selection.includes(memberId);
+                  });
 
                   navigate("/members/update", {
                     state: {
