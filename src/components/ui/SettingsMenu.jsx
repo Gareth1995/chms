@@ -48,7 +48,7 @@ const SettingsMenu = ({ onLogout }) => {
             Add Member
           </button>
 
-          {/*View Members */}
+          {/* Option 2: View Members */}
             <button 
               onClick={() => { setIsOpen(false); navigate('/members'); }}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -59,9 +59,23 @@ const SettingsMenu = ({ onLogout }) => {
               Members
             </button>
 
+          {/* Option 3: Track Attendance */}
+          <button 
+            onClick={() => {
+              setIsOpen(false);
+              navigate('/members/add');
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6M9 16h6M9 8h6M5 8h.01M5 12h.01M5 16h.01M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" />
+            </svg>
+            Track Attendance
+          </button>
+
           <hr className="my-1 border-gray-100" />
 
-          {/* Option 2: Logout */}
+          {/* Option 4: Logout */}
           <button 
             onClick={onLogout}
             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
