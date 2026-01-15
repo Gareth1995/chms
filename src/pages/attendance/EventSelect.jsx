@@ -6,6 +6,7 @@ import EventDropdown from '../../components/ui/eventDropdown';
 const EventSelect = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState("");
 
   const handleChange = (e) => {
     console.log("Change made");
@@ -22,7 +23,11 @@ const EventSelect = () => {
         <div className="grid grid-cols-2 gap-3">
             <div>
               {/* <EventDropdown title={"Gender"} initialOptions={["Conference", "Workshop", "Meetup"]}/> */}
-              <EventDropdown/>
+              {/* <EventDropdown/> */}
+              <EventDropdown 
+                value={selectedEvent} 
+                onChange={(val) => setSelectedEvent(val)} 
+              />
             </div>
         </div>
 
