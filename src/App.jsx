@@ -6,6 +6,7 @@ import AddMember from "./pages/dashboard/addMember";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Members from "./pages/dashboard/Members";
 import UpdateMember from "./pages/dashboard/updateMember";
+import EventSelect from "./pages/attendance/EventSelect";
 
 function App() {
     return (
@@ -46,6 +47,15 @@ function App() {
                     element={
                         <ProtectedRoute>
                         <Members />
+                        </ProtectedRoute>
+                    } 
+                />
+
+                <Route 
+                    path="/attendance/EventSelect" 
+                    element={
+                        <ProtectedRoute>
+                        <EventSelect />
                         </ProtectedRoute>
                     } 
                 />
