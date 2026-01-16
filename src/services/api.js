@@ -89,3 +89,61 @@ export const getMembers = async () => {
     return { status: "error", message: "Network error" };
   }
 };
+
+/**
+ * Fetches the list of unique event names from the 'Events' sheet.
+ */
+export const getEvents = async () => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getEvents"
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return { status: "error", message: "Network error", events: [] };
+  }
+};
+
+/**
+ * Adds a new event to the 'Events' sheet.
+ * @param {string} eventName - The name of the event to add.
+ */
+export const addEvent = async (eventName) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addEvent",
+        eventName: eventName
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding event:", error);
+    return { status: "error", message: "Network error" };
+  }
+};
+
+/**
+ * Deletes an event from the 'Events' sheet.
+ * @param {string} eventName - The name of the event to delete.
+ */
+export const deleteEvent = async (eventName) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "deleteEvent",
+        eventName: eventName
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return { status: "error", message: "Network error" };
+  }
+};
