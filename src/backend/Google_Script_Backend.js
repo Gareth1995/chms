@@ -404,8 +404,76 @@ function getEvents() {
   return sendJSON({ status: "success", events: uniqueEvents });
 }
 
+function addEvent(data) {
+  let sheet = ss.getSheetByName("Events");
+  
+  // 1. If sheet doesn't exist, create it and add headers
+  if (!sheet) {
+    sheet = ss.insertSheet("Events");
+    sheet.appendRow(["id", "event_name", "timestamp"]); // Header Row
+  }
+
+  // 2. CHECK FOR DUPLICATES
+  const rows = sheet.getDataRange().getValues();
+  // We assume "event_name" is in Column B (Index 1).
+  // We trim and convert to lowercase to ensure "Sabbath School" and "sabbath school" are treated as duplicates.
+  const newNameNormalized = String(data.eventName).trim().toLowerCase();
+
+  // Loop through existing rows (skipping header at index 0)
+  for (let i = 1; i < rows.length; i++) {
+    const existingName = String(rows[i][1]).trim().toLowerCase();
+    
+    if (existingName === newNameNormalized) {
+      return sendJSON({ 
+        status: "error", 
+        message: "This event has already been created" 
+      });
+    }
+  }
+
+  // 3. GENERATE CUSTOM ID: e{date}{5 digit random salt}
+  const now = new Date();
+  
+  // Format Date: YYYYMMDD
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const day = String(now.getDate()).padStart(2, '0');
+  const dateString = `${year}${month}${day}`;
+  
+  // Generate 5 Digit Salt (Random number between 10000 and 99999)
+  const salt = Math.floor(Math.random() * 90000) + 10000;
+  
+  const id = `e${dateString}${salt}`; // e.g., e2026011109874
+  const timestamp = now.toISOString();
+  
+  // 4. APPEND ROW
+  sheet.appendRow([
+    id, 
+    data.eventName, 
+    timestamp
+  ]);
+
+  return sendJSON({ status: "success", message: "Event added", eventName: data.eventName });
+}
+
 // testing functions
 // testing registration
+function testAddEvents() {
+  // 1. Create fake data (mocking what React would send)
+  const mockmember = {
+    postData: {
+      contents: JSON.stringify({
+        action: "addEvent",
+        eventName: "Sabbath School"
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockmember);
+}
+
 function testGetEvents(){
 
   const getEveTest = {

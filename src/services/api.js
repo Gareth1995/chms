@@ -107,3 +107,23 @@ export const getEvents = async () => {
     return { status: "error", message: "Network error", events: [] };
   }
 };
+
+/**
+ * Adds a new event to the 'Events' sheet.
+ * @param {string} eventName - The name of the event to add.
+ */
+export const addEvent = async (eventName) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addEvent",
+        eventName: eventName
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding event:", error);
+    return { status: "error", message: "Network error" };
+  }
+};

@@ -7,7 +7,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-import { getEvents } from "../../services/api";
+import { getEvents, addEvent } from "../../services/api";
 
 const ChevronIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -23,12 +23,7 @@ const MinusIcon = () => (
 );
 
 const EventDropdown = ({ value, onChange }) => {
-  // const [options, setOptions] = useState([
-  //   "Sabbath School",
-  //   "Divine Service",
-  //   "Prayer Meeting"
-  // ]);
-
+  
   const [options, setOptions] = useState([]); 
   const [loading, setLoading] = useState(false); // Global loading for fetch
   const [isAdding, setIsAdding] = useState(false);
@@ -73,34 +68,64 @@ const EventDropdown = ({ value, onChange }) => {
     }
   };
 
-  // --- ADD HANDLER (Click Away) ---
-  const handleClickAway = () => {
+  // --- 2. SHARED SAVE FUNCTION (Connects to Backend) ---
+  const handleSave = async () => {
     const trimmed = newEventName.trim();
     
-    // If empty, just close the input without saving
     if (!trimmed) {
         setIsAdding(false);
         return;
     }
 
-    // Save to list
-    setOptions([...options, trimmed]);
-    
-    // Update parent selection
-    if (onChange) onChange(trimmed);
-    
-    // Reset state
-    setNewEventName("");
-    setIsAdding(false); 
+    // Check for duplicates before hitting API
+    if (options.includes(trimmed)) {
+        alert("This event already exists.");
+        setNewEventName(""); // Clear text
+        setIsAdding(false);  // Force close
+        return;
+    }
+
+    setIsSaving(true); // Show loading state
+
+    try {
+        // Call the Backend API
+        const result = await addEvent(trimmed); //
+
+        if (result.status === "success") {
+            // Update Local State
+            setOptions([...options, trimmed]);
+            
+            // Update Parent Selection
+            if (onChange) onChange(trimmed);
+            
+            // Cleanup
+            setNewEventName("");
+            setIsAdding(false); 
+        } else {
+            alert("Error saving event: " + result.message);
+        }
+    } catch (error) {
+        console.error("Save failed", error);
+        alert("Network error occurred.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   // --- ADD HANDLER (Enter) ---
   const handleKeyDown = (e) => {
     e.stopPropagation(); 
 
+    if (e.key === "Escape") {
+        e.preventDefault();
+        setNewEventName(""); 
+        setIsAdding(false);  
+        return;
+    }
+
     if (e.key === "Enter") {
         e.preventDefault(); 
-        handleClickAway(); // Call the shared save function
+        handleSave(); // Call the shared save function
     }
   };
 
@@ -148,7 +173,11 @@ const EventDropdown = ({ value, onChange }) => {
               key={option} 
               value={option}
               // Select the item (unless delete was clicked)
-              onClick={() => onChange && onChange(option)}
+              // onClick={() => onChange && onChange(option)}
+              onClick={() => {
+                if (onChange) onChange(option);
+                setIsAdding(false);
+              }}
               borderRadius="0"
               bg={value === option ? "gray.200" : "white"}
               _hover={{ bg: "gray.100" }}
@@ -193,7 +222,7 @@ const EventDropdown = ({ value, onChange }) => {
                         value={newEventName}
                         onChange={(e) => setNewEventName(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        onBlur={handleClickAway}
+                        // onBlur={setIsAdding(false)}
                         onClick={(e) => e.stopPropagation()}
                         pl={2} 
                         borderRadius="0"
