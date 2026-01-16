@@ -30,10 +30,10 @@ Feature: Track attendance
 From "track attendance" settings menu:
 -> Page that asks for event specifics
     - Drop down of events (empty initially but will pull event names from Events table) (done)
-    - Have a "+ Add event" as one of the drop down options 
-    - Also have - sign next to each event so that it allows for deletion (only on front end edit on_frontend column)
-    - Allow text to be typed and when enter is pressed it will save that event to an Events table on the backend.
-    - Also ask for event date
+    - Have a "+ Add event" as one of the drop down options  (done)
+    - Also have - sign next to each event so that it allows for deletion (only on front end edit on_frontend column) (done)
+    - Allow text to be typed and when enter is pressed it will save that event to an Events table on the backend. (done)
+    - Also ask for event date (done)
 
 -> Page like Members page where you can select rows and submit attendance.
     - Heading of Card will say "Track attendance for {event name}"

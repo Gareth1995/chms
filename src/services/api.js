@@ -127,3 +127,23 @@ export const addEvent = async (eventName) => {
     return { status: "error", message: "Network error" };
   }
 };
+
+/**
+ * Deletes an event from the 'Events' sheet.
+ * @param {string} eventName - The name of the event to delete.
+ */
+export const deleteEvent = async (eventName) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "deleteEvent",
+        eventName: eventName
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return { status: "error", message: "Network error" };
+  }
+};
