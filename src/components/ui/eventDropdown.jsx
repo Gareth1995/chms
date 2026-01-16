@@ -1,156 +1,3 @@
-// import React, { useState } from "react";
-// import {
-//   Menu,
-//   Button,
-//   Input,
-//   Box,
-//   Text,
-// } from "@chakra-ui/react";
-
-// // Custom Triangle Icon
-// const TriangleIcon = () => (
-//   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-//     <path d="M24 0L0 0L12 24L24 0Z" /> 
-//   </svg>
-// );
-
-// const EventDropdown = ({ value, onChange }) => {
-//   const [options, setOptions] = useState([
-//     "Sabbath School",
-//     "Divine Service",
-//     "Prayer Meeting",
-//     "Youth Service"
-//   ]);
-
-//   const [isAdding, setIsAdding] = useState(false);
-//   const [newEventName, setNewEventName] = useState("");
-
-//   // --- KEYBOARD HANDLER ---
-//   const handleKeyDown = (e) => {
-//     // CRITICAL FIX: Stop the Menu from intercepting keys (Space, Arrows, etc.)
-//     // This allows you to type spaces and move the cursor inside the input.
-//     e.stopPropagation();
-
-//     if (e.key === "Enter") {
-//         e.preventDefault(); 
-//         const trimmed = newEventName.trim();
-        
-//         if (!trimmed) {
-//             setIsAdding(false);
-//             return;
-//         }
-
-//         // Add to list
-//         setOptions([...options, trimmed]);
-        
-//         // Select it immediately (updates parent state)
-//         if (onChange) onChange(trimmed);
-        
-//         // Reset
-//         setNewEventName("");
-//         setIsAdding(false); 
-//     }
-//   };
-
-//   return (
-//     <Menu.Root positioning={{ placement: "bottom-start", sameWidth: true }}>
-      
-//       {/* TRIGGER BUTTON */}
-//       <Menu.Trigger asChild>
-//         <Button 
-//           variant="outline"
-//           width="100%"
-//           justifyContent="flex-start" 
-//           borderRadius="0"
-//           border="2px solid black"
-//           bg="white"
-//           _hover={{ bg: "gray.50" }}
-//           paddingInlineStart={4}
-//           gap={4}
-//           fontWeight="normal"
-//         >
-//             <TriangleIcon />
-//             {/* Display the 'value' prop, or fallback text */}
-//             <Text>{value || "Select Event"}</Text>
-//         </Button>
-//       </Menu.Trigger>
-
-//       {/* DROPDOWN CONTENT */}
-//       <Menu.Positioner>
-//         <Menu.Content 
-//           borderRadius="0" 
-//           border="2px solid black" 
-//           marginTop="-2px"
-//           padding={0}
-//           width="100%"
-//           bg="white"
-//           shadow="none"
-//           minW="var(--chakra-reference-width)"
-//           zIndex={10}
-//         >
-//           {options.map((option) => (
-//             <Menu.Item 
-//               key={option} 
-//               value={option}
-//               // When clicked, fire onChange to update parent state
-//               onClick={() => onChange && onChange(option)}
-//               borderRadius="0"
-//               bg={value === option ? "gray.200" : "white"}
-//               _hover={{ bg: "gray.100" }}
-//               borderBottom="1px solid gray"
-//               cursor="pointer"
-//               py={2}
-//               px={4}
-//             >
-//               {option}
-//             </Menu.Item>
-//           ))}
-
-//           {/* "+ Add Event" Section */}
-//           <Box borderTop="2px solid black">
-//             {isAdding ? (
-//                 <Box p={2}>
-//                     <Input 
-//                         autoFocus
-//                         size="sm"
-//                         placeholder="Type & Enter..."
-//                         value={newEventName}
-//                         onChange={(e) => setNewEventName(e.target.value)}
-//                         onKeyDown={handleKeyDown}
-//                         onClick={(e) => e.stopPropagation()} 
-//                         borderRadius="0"
-//                         border="1px solid gray"
-//                         bg="white"
-//                     />
-//                 </Box>
-//             ) : (
-//                 <Menu.Item 
-//                     value="add-new"
-//                     closeOnSelect={false} 
-//                     onClick={(e) => {
-//                         e.stopPropagation(); 
-//                         setIsAdding(true);
-//                     }}
-//                     borderRadius="0"
-//                     _hover={{ bg: "gray.100" }}
-//                     cursor="pointer"
-//                     py={3}
-//                     px={4}
-//                     fontWeight="medium"
-//                 >
-//                     + Add event
-//                 </Menu.Item>
-//             )}
-//           </Box>
-
-//         </Menu.Content>
-//       </Menu.Positioner>
-//     </Menu.Root>
-//   );
-// };
-
-// export default EventDropdown;
-
 import React, { useState } from "react";
 import {
   Menu,
@@ -161,9 +8,14 @@ import {
 } from "@chakra-ui/react";
 
 // 1. Custom Triangle Icon
-const TriangleIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 0L0 0L12 24L24 0Z" /> 
+// const TriangleIcon = () => (
+//   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+//     <path d="M24 0L0 0L12 24L24 0Z" /> 
+//   </svg>
+// );
+const ChevronIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9l6 6 6-6" />
   </svg>
 );
 
@@ -206,24 +58,55 @@ const EventDropdown = ({ value, onChange }) => {
   };
 
   // --- ADD HANDLER ---
+  // const handleKeyDown = (e) => {
+  //   e.stopPropagation(); // Stop menu interference
+
+  //   if (e.key === "Enter") {
+  //       e.preventDefault(); 
+  //       const trimmed = newEventName.trim();
+        
+  //       if (!trimmed) {
+  //           setIsAdding(false);
+  //           return;
+  //       }
+
+  //       setOptions([...options, trimmed]);
+        
+  //       if (onChange) onChange(trimmed);
+        
+  //       setNewEventName("");
+  //       setIsAdding(false); 
+  //   }
+  // };
+
+  // --- ADD HANDLER (Click Away) ---
+  const handleClickAway = () => {
+    const trimmed = newEventName.trim();
+    
+    // If empty, just close the input without saving
+    if (!trimmed) {
+        setIsAdding(false);
+        return;
+    }
+
+    // Save to list
+    setOptions([...options, trimmed]);
+    
+    // Update parent selection
+    if (onChange) onChange(trimmed);
+    
+    // Reset state
+    setNewEventName("");
+    setIsAdding(false); 
+  };
+
+  // --- ADD HANDLER (Enter) ---
   const handleKeyDown = (e) => {
-    e.stopPropagation(); // Stop menu interference
+    e.stopPropagation(); 
 
     if (e.key === "Enter") {
         e.preventDefault(); 
-        const trimmed = newEventName.trim();
-        
-        if (!trimmed) {
-            setIsAdding(false);
-            return;
-        }
-
-        setOptions([...options, trimmed]);
-        
-        if (onChange) onChange(trimmed);
-        
-        setNewEventName("");
-        setIsAdding(false); 
+        handleClickAway(); // Call the shared save function
     }
   };
 
@@ -234,31 +117,37 @@ const EventDropdown = ({ value, onChange }) => {
         <Button 
           variant="outline"
           width="100%"
+          // justifyContent="space-between"
+          borderRadius="md"
+          border="1px solid"       // Reduced to 1px for a standard "input" look
+          borderColor="gray.300"
           justifyContent="flex-start" 
-          borderRadius="0"
-          border="2px solid black"
+          // borderRadius="0"
+          // border="2px solid black"
           bg="white"
           _hover={{ bg: "gray.50" }}
           paddingInlineStart={4}
           gap={4}
           fontWeight="normal"
         >
-            <TriangleIcon />
+            <ChevronIcon />
             <Text>{value || "Select Event"}</Text>
         </Button>
       </Menu.Trigger>
 
       <Menu.Positioner>
         <Menu.Content 
-          borderRadius="0" 
-          border="2px solid black" 
-          marginTop="-2px"
-          padding={0}
+          borderRadius="md"             // Rounded corners
+          border="1px solid"
+          borderColor="gray.200"
+          marginTop={2}                 // Small gap between button and list
+          padding={1}                   // Inner padding for aesthetics
           width="100%"
           bg="white"
-          shadow="none"
+          shadow="lg"                   // Nice drop shadow
           minW="var(--chakra-reference-width)"
           zIndex={10}
+          overflow="hidden"
         >
           {options.map((option) => (
             <Menu.Item 
@@ -302,7 +191,7 @@ const EventDropdown = ({ value, onChange }) => {
           {/* Add Event Section */}
           <Box borderTop="2px solid black">
             {isAdding ? (
-                <Box p={2}>
+                <Box p={4}>
                     <Input 
                         autoFocus
                         size="sm"
@@ -310,7 +199,9 @@ const EventDropdown = ({ value, onChange }) => {
                         value={newEventName}
                         onChange={(e) => setNewEventName(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        onClick={(e) => e.stopPropagation()} 
+                        onBlur={handleClickAway}
+                        onClick={(e) => e.stopPropagation()}
+                        pl={2} 
                         borderRadius="0"
                         border="1px solid gray"
                         bg="white"
