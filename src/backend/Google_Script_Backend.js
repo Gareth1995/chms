@@ -2,27 +2,27 @@
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 
 // 1. Handle Reading Data (GET Requests)
-function doGet(e) {
-  const action = e.parameter.action;
+// function doGet(e) {
+//   const action = e.parameter.action;
   
-  if (action === "getMembers") {
-    const sheet = ss.getSheetByName("Members");
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0];
-    const data = rows.slice(1); // Remove headers
+//   if (action === "getMembers") {
+//     const sheet = ss.getSheetByName("Members");
+//     const rows = sheet.getDataRange().getValues();
+//     const headers = rows[0];
+//     const data = rows.slice(1); // Remove headers
 
-    // Convert rows to Array of Objects
-    const members = data.map(row => {
-      return {
-        id: row[0],
-        name: row[1],
-        category: row[2]
-      };
-    });
+//     // Convert rows to Array of Objects
+//     const members = data.map(row => {
+//       return {
+//         id: row[0],
+//         name: row[1],
+//         category: row[2]
+//       };
+//     });
 
-    return sendJSON(members);
-  }
-}
+//     return sendJSON(members);
+//   }
+// }
 
 // 2. Handle Writing Data (POST Requests)
 function doPost(e) {
@@ -57,6 +57,14 @@ function doPost(e) {
     if (action == "getMembers") {
       console.log('Getting members...');
       return getMembers(data);
+    }
+
+    if (data.action === "getEvents") {
+      return getEvents();
+    }
+
+    if (data.action === "addEvent") {
+      return addEvent(data);
     }
 
     if (action === "saveAttendance") {
@@ -366,8 +374,121 @@ function updateMember(data) {
   });
 }
 
+// 1. Helper function to fetch unique events
+function getEvents() {
+  const sheet = ss.getSheetByName("Events");
+  
+  // If sheet doesn't exist yet, return empty list
+  if (!sheet) {
+    return sendJSON({ status: "success", events: [] });
+  }
+
+  const data = sheet.getDataRange().getValues();
+  
+  // Assuming Row 1 is headers.
+  // Assuming "Event Name" is in Column B (index 1).
+  // Check if there is data beyond headers
+  if (data.length <= 1) {
+    return sendJSON({ status: "success", events: [] });
+  }
+
+  // Extract names from Column B (index 1), skipping header row
+  const eventNames = data.slice(1).map(row => row[1]);
+
+  // Filter out blanks and get unique values
+  const uniqueEvents = [...new Set(eventNames)].filter(name => name && String(name).trim() !== "");
+
+  // Sort alphabetically for better UX
+  uniqueEvents.sort();
+
+  return sendJSON({ status: "success", events: uniqueEvents });
+}
+
+function addEvent(data) {
+  let sheet = ss.getSheetByName("Events");
+  
+  // 1. If sheet doesn't exist, create it and add headers
+  if (!sheet) {
+    sheet = ss.insertSheet("Events");
+    sheet.appendRow(["id", "event_name", "timestamp"]); // Header Row
+  }
+
+  // 2. CHECK FOR DUPLICATES
+  const rows = sheet.getDataRange().getValues();
+  // We assume "event_name" is in Column B (Index 1).
+  // We trim and convert to lowercase to ensure "Sabbath School" and "sabbath school" are treated as duplicates.
+  const newNameNormalized = String(data.eventName).trim().toLowerCase();
+
+  // Loop through existing rows (skipping header at index 0)
+  for (let i = 1; i < rows.length; i++) {
+    const existingName = String(rows[i][1]).trim().toLowerCase();
+    
+    if (existingName === newNameNormalized) {
+      return sendJSON({ 
+        status: "error", 
+        message: "This event has already been created" 
+      });
+    }
+  }
+
+  // 3. GENERATE CUSTOM ID: e{date}{5 digit random salt}
+  const now = new Date();
+  
+  // Format Date: YYYYMMDD
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const day = String(now.getDate()).padStart(2, '0');
+  const dateString = `${year}${month}${day}`;
+  
+  // Generate 5 Digit Salt (Random number between 10000 and 99999)
+  const salt = Math.floor(Math.random() * 90000) + 10000;
+  
+  const id = `e${dateString}${salt}`; // e.g., e2026011109874
+  const timestamp = now.toISOString();
+  
+  // 4. APPEND ROW
+  sheet.appendRow([
+    id, 
+    data.eventName, 
+    timestamp
+  ]);
+
+  return sendJSON({ status: "success", message: "Event added", eventName: data.eventName });
+}
+
 // testing functions
 // testing registration
+function testAddEvents() {
+  // 1. Create fake data (mocking what React would send)
+  const mockmember = {
+    postData: {
+      contents: JSON.stringify({
+        action: "addEvent",
+        eventName: "Sabbath School"
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockmember);
+}
+
+function testGetEvents(){
+
+  const getEveTest = {
+    postData: {
+      contents: JSON.stringify({
+        action: "getEvents" 
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(getEveTest);
+}
+
 function testRegistrationLogic() {
   // 1. Create fake data (mocking what React would send)
   const mockEvent = {
