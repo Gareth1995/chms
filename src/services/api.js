@@ -89,3 +89,21 @@ export const getMembers = async () => {
     return { status: "error", message: "Network error" };
   }
 };
+
+/**
+ * Fetches the list of unique event names from the 'Events' sheet.
+ */
+export const getEvents = async () => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getEvents"
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return { status: "error", message: "Network error", events: [] };
+  }
+};

@@ -29,8 +29,8 @@ Feature: Track attendance
 ======================================================
 From "track attendance" settings menu:
 -> Page that asks for event specifics
-    - Drop down of events (empty initially but will pull event names from Events table)
-    - Have a "+ Add event" as one of the drop down options
+    - Drop down of events (empty initially but will pull event names from Events table) (done)
+    - Have a "+ Add event" as one of the drop down options 
     - Also have - sign next to each event so that it allows for deletion (only on front end edit on_frontend column)
     - Allow text to be typed and when enter is pressed it will save that event to an Events table on the backend.
     - Also ask for event date
@@ -45,6 +45,5 @@ Output to the Attendance table will be:
 member_id | event_name | status | timestamp
 
 Event table will have the following:
-event_id | event_name | on_frontend
+event_id | event_name |
 Where event id will be in the form e{date}{5 digit random salt} eg e2026011109874
-on_frontend determines if it is seen on the frontend or not

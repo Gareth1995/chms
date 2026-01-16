@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Menu,
   Button,
@@ -7,12 +7,8 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-// 1. Custom Triangle Icon
-// const TriangleIcon = () => (
-//   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-//     <path d="M24 0L0 0L12 24L24 0Z" /> 
-//   </svg>
-// );
+import { getEvents } from "../../services/api";
+
 const ChevronIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M6 9l6 6 6-6" />
@@ -27,15 +23,35 @@ const MinusIcon = () => (
 );
 
 const EventDropdown = ({ value, onChange }) => {
-  const [options, setOptions] = useState([
-    "Sabbath School",
-    "Divine Service",
-    "Prayer Meeting",
-    "Youth Service"
-  ]);
+  // const [options, setOptions] = useState([
+  //   "Sabbath School",
+  //   "Divine Service",
+  //   "Prayer Meeting"
+  // ]);
 
+  const [options, setOptions] = useState([]); 
+  const [loading, setLoading] = useState(false); // Global loading for fetch
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Specific loading for adding
   const [newEventName, setNewEventName] = useState("");
+
+  // Fetching events from event table on Mount
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const result = await getEvents(); //
+        if (result.status === "success") {
+          setOptions(result.events);
+        }
+      } catch (error) {
+        console.error("Failed to fetch events", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   // --- DELETE HANDLER ---
   const handleDelete = (e, optionToDelete) => {
@@ -56,28 +72,6 @@ const EventDropdown = ({ value, onChange }) => {
       }
     }
   };
-
-  // --- ADD HANDLER ---
-  // const handleKeyDown = (e) => {
-  //   e.stopPropagation(); // Stop menu interference
-
-  //   if (e.key === "Enter") {
-  //       e.preventDefault(); 
-  //       const trimmed = newEventName.trim();
-        
-  //       if (!trimmed) {
-  //           setIsAdding(false);
-  //           return;
-  //       }
-
-  //       setOptions([...options, trimmed]);
-        
-  //       if (onChange) onChange(trimmed);
-        
-  //       setNewEventName("");
-  //       setIsAdding(false); 
-  //   }
-  // };
 
   // --- ADD HANDLER (Click Away) ---
   const handleClickAway = () => {

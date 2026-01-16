@@ -2,27 +2,27 @@
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 
 // 1. Handle Reading Data (GET Requests)
-function doGet(e) {
-  const action = e.parameter.action;
+// function doGet(e) {
+//   const action = e.parameter.action;
   
-  if (action === "getMembers") {
-    const sheet = ss.getSheetByName("Members");
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0];
-    const data = rows.slice(1); // Remove headers
+//   if (action === "getMembers") {
+//     const sheet = ss.getSheetByName("Members");
+//     const rows = sheet.getDataRange().getValues();
+//     const headers = rows[0];
+//     const data = rows.slice(1); // Remove headers
 
-    // Convert rows to Array of Objects
-    const members = data.map(row => {
-      return {
-        id: row[0],
-        name: row[1],
-        category: row[2]
-      };
-    });
+//     // Convert rows to Array of Objects
+//     const members = data.map(row => {
+//       return {
+//         id: row[0],
+//         name: row[1],
+//         category: row[2]
+//       };
+//     });
 
-    return sendJSON(members);
-  }
-}
+//     return sendJSON(members);
+//   }
+// }
 
 // 2. Handle Writing Data (POST Requests)
 function doPost(e) {
@@ -57,6 +57,14 @@ function doPost(e) {
     if (action == "getMembers") {
       console.log('Getting members...');
       return getMembers(data);
+    }
+
+    if (data.action === "getEvents") {
+      return getEvents();
+    }
+
+    if (data.action === "addEvent") {
+      return addEvent(data);
     }
 
     if (action === "saveAttendance") {
@@ -366,8 +374,53 @@ function updateMember(data) {
   });
 }
 
+// 1. Helper function to fetch unique events
+function getEvents() {
+  const sheet = ss.getSheetByName("Events");
+  
+  // If sheet doesn't exist yet, return empty list
+  if (!sheet) {
+    return sendJSON({ status: "success", events: [] });
+  }
+
+  const data = sheet.getDataRange().getValues();
+  
+  // Assuming Row 1 is headers.
+  // Assuming "Event Name" is in Column B (index 1).
+  // Check if there is data beyond headers
+  if (data.length <= 1) {
+    return sendJSON({ status: "success", events: [] });
+  }
+
+  // Extract names from Column B (index 1), skipping header row
+  const eventNames = data.slice(1).map(row => row[1]);
+
+  // Filter out blanks and get unique values
+  const uniqueEvents = [...new Set(eventNames)].filter(name => name && String(name).trim() !== "");
+
+  // Sort alphabetically for better UX
+  uniqueEvents.sort();
+
+  return sendJSON({ status: "success", events: uniqueEvents });
+}
+
 // testing functions
 // testing registration
+function testGetEvents(){
+
+  const getEveTest = {
+    postData: {
+      contents: JSON.stringify({
+        action: "getEvents" 
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(getEveTest);
+}
+
 function testRegistrationLogic() {
   // 1. Create fake data (mocking what React would send)
   const mockEvent = {
