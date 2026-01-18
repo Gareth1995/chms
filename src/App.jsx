@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Members from "./pages/dashboard/Members";
 import UpdateMember from "./pages/dashboard/updateMember";
 import EventSelect from "./pages/attendance/EventSelect";
+import TrackAttendance from "./pages/attendance/TrackAttendance";
 
 function App() {
     return (
@@ -29,6 +30,15 @@ function App() {
                     element={
                         <ProtectedRoute>
                         <AddMember />
+                        </ProtectedRoute>
+                    } 
+                />
+
+                <Route 
+                    path="/members/track" 
+                    element={
+                        <ProtectedRoute>
+                        <TrackAttendance />
                         </ProtectedRoute>
                     } 
                 />
