@@ -147,3 +147,36 @@ export const deleteEvent = async (eventName) => {
     return { status: "error", message: "Network error" };
   }
 };
+
+export const saveAttendance = async (attendanceRecords) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addAttendance",
+        records: attendanceRecords // Sending the whole array
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving attendance:", error);
+    return { status: "error", message: "Network error" };
+  }
+};
+
+export const getAttendance = async (eventName, date) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getAttendance",
+        eventName: eventName,
+        date: date
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching attendance:", error);
+    return { status: "error", presentMemberIds: [] };
+  }
+};
