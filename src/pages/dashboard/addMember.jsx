@@ -64,7 +64,7 @@ const AddMember = () => {
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase">Last Name</label>
             <input 
-              name="lastName" required value={formData.lastName} onChange={handleChange}
+              name="lastName" value={formData.lastName} onChange={handleChange}
               className="w-full p-3 border rounded-lg mt-1" placeholder="Doe"
             />
           </div>
@@ -75,7 +75,7 @@ const AddMember = () => {
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase">Nationality</label>
             <input 
-              name="nationality" required value={formData.nationality} onChange={handleChange}
+              name="nationality" value={formData.nationality} onChange={handleChange}
               className="w-full p-3 border rounded-lg mt-1" placeholder="e.g. South African"
             />
           </div>
@@ -113,7 +113,7 @@ const AddMember = () => {
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
           <input 
-            name="email" type="email" required value={formData.email} onChange={handleChange}
+            name="email" type="email" value={formData.email} onChange={handleChange}
             className="w-full p-3 border rounded-lg mt-1" placeholder="member@example.com"
           />
         </div>
@@ -121,7 +121,7 @@ const AddMember = () => {
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase">Cell Number</label>
           <input 
-            name="cell" type="tel" required value={formData.cell} onChange={handleChange}
+            name="cell" type="tel" value={formData.cell} onChange={handleChange}
             className="w-full p-3 border rounded-lg mt-1" placeholder="082 123 4567"
           />
         </div>
@@ -130,7 +130,7 @@ const AddMember = () => {
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase">Date of Birth</label>
           <input 
-            name="dob" type="date" required value={formData.dob} onChange={handleChange}
+            name="dob" type="date" value={formData.dob} onChange={handleChange}
             // className="w-full p-3 border rounded-lg mt-1"
             className="w-full max-w-full block box-border p-3 border rounded-lg mt-1 appearance-none bg-white"
           />
