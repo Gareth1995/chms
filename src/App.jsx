@@ -1,7 +1,7 @@
 import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
-import Home from './pages/dashboard/Home';
+import Dashboard from './pages/dashboard/Dashboard';
 import AddMember from "./pages/dashboard/addMember";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Members from "./pages/dashboard/Members";
@@ -20,7 +20,7 @@ function App() {
                     path="/dashboard"
                     element={
                     <ProtectedRoute>
-                    <Home />
+                    <Dashboard />
                     </ProtectedRoute>
                     }
                 />
