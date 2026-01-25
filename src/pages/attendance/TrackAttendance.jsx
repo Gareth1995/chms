@@ -63,47 +63,6 @@ const TrackAttendance = () => {
     loadData();
   }, [eventName, eventDate]); 
 
-  // --- UPDATED CAPTURE HANDLER ---
-  // const submitAttendance = async () => {
-
-  //   // Close the dialog and start the saving process
-  //   setIsDialogOpen(false);
-
-  //   if (isSubmitting) return;
-  //   setIsSubmitting(true); // 1. Start Loading (Spinner appears)
-
-  //   try {
-  //       const attendanceRecords = members.map((member, index) => {
-  //           const memberId = member.id || member.email || index;
-  //           const status = selection.includes(memberId) ? 1 : 0;
-
-  //           return {
-  //               member_id: memberId,
-  //               event_name: eventName,
-  //               status: status,
-  //               date: eventDate
-  //           };
-  //       });
-
-  //       const result = await saveAttendance(attendanceRecords);
-
-  //       if (result.status === "success") {
-  //           // 2. Show Success Popup
-  //           // The spinner will keep spinning until the user clicks "OK"
-  //           alert("Attendance has been captured"); 
-  //           navigate("/dashboard");
-  //       } else {
-  //           alert("Failed to save: " + result.message);
-  //       }
-
-  //   } catch (error) {
-  //       console.error("Capture failed", error);
-  //       alert("An error occurred.");
-  //   } finally {
-  //       setIsSubmitting(false); // Stop Loading
-  //   }
-  // };
-
   // This handles both scenarios: with or without the extra visitor record
   const processSave = async (extraRecord = null) => {
     setIsDialogOpen(false); 
@@ -184,23 +143,6 @@ const TrackAttendance = () => {
     setVisitorCount(""); 
     setIsDialogOpen(true);
   };
-
-  // const handleCaptureClick = (e) => { // Added 'e' argument here
-  //   if (e) {
-  //       e.preventDefault();
-  //       e.stopPropagation();
-  //   }
-    
-  //   console.log("Capture clicked, opening modal...");
-  //   setIsDialogOpen(true);
-  // };
-
-  // LOGIC FOR "YES" (New functionality) ---
-  // const handleAddUnknownVisitors = () => {
-  //   setIsDialogOpen(false);
-  //   console.log("Redirecting to add visitors...");
-  //   alert("Functionality to add unknown visitors will happen here.");
-  // };
 
   // --- Table Logic ---
   const hasSelection = selection.length > 0;
@@ -339,40 +281,6 @@ const TrackAttendance = () => {
           </Portal>
         </ActionBar.Root>
       </Card>
-
-      {/* <Dialog.Root 
-        open={isDialogOpen} 
-        onOpenChange={(e) => setIsDialogOpen(e.open)}
-      > */}
-        {/* <Dialog.Backdrop bg="blackAlpha.500" backdropFilter="blur(4px)" />
-        <Dialog.Positioner>
-          <Dialog.Content bg="white" borderRadius="md" p={4} boxShadow="xl">
-            <Dialog.CloseTrigger /> */}
-            
-            {/* <Dialog.Header>
-              <Dialog.Title fontSize="lg" fontWeight="bold">
-                Add Unknown Visitors
-              </Dialog.Title>
-            </Dialog.Header> */}
-            
-            {/* <Dialog.Body py={4}>
-              Was there any unknown visitors?
-            </Dialog.Body> */}
-            
-            {/* <Dialog.Footer gap={3}> */}
-               {/* No = Just Save */}
-              {/* <Button variant="outline" onClick={submitAttendance}>
-                No
-              </Button> */}
-              {/* Yes = Add Visitors Logic */}
-              {/* <Button onClick={handleAddUnknownVisitors} bg="blue.600" color="white" _hover={{ bg: "blue.700" }}>
-                Yes
-              </Button> */}
-            {/* </Dialog.Footer> */}
-
-          {/* </Dialog.Content>
-        </Dialog.Positioner>
-      </Dialog.Root> */}
 
       <Dialog.Root 
         open={isDialogOpen} 
