@@ -1,100 +1,295 @@
-// import React, { useRef, useState } from 'react';
+// import React, { useState } from 'react';
 // import { useNavigate } from 'react-router-dom';
+// import { 
+//   LineChart, Line, 
+//   BarChart, Bar, 
+//   PieChart, Pie, Cell, 
+//   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid 
+// } from 'recharts';
 // import Card from '../../components/ui/Card';
 // import { useAuth } from '../../contexts/AuthContext';
 // import SettingsMenu from '../../components/ui/SettingsMenu';
 
-// const Home = () => {
+// const Dashboard = () => {
 //   const navigate = useNavigate();
-//   // Get user info and logout function from our global state
 //   const { user, logout } = useAuth();
+  
+//   const [timeFilter, setTimeFilter] = useState('Month');
 
 //   const handleLogout = () => {
-//     logout(); // Clear user state
-//     navigate('/login'); // Redirect to login page
+//     logout();
+//     navigate('/login');
 //   };
 
-//   // Simple SVG icons for the menu items
-//   const AttendanceIcon = () => (
-//     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-//     </svg>
-//   );
+//   // --- MODERNIZED DUMMY DATA ---
 
-//   const FutureIcon = () => (
-//     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-//     </svg>
-//   );
+//   const attendanceData = [
+//     { date: 'Jan', count: 120 },
+//     { date: 'Feb', count: 150 },
+//     { date: 'Mar', count: 130 },
+//     { date: 'Apr', count: 170 },
+//     { date: 'May', count: 160 },
+//     { date: 'Jun', count: 200 },
+//   ];
+
+//   const genderData = [
+//     { name: 'Male', value: 45 },
+//     { name: 'Female', value: 55 },
+//   ];
+//   // Modern Palette: Indigo & Rose
+//   const GENDER_COLORS = ['#6366f1', '#f43f5e']; 
+
+//   const nationalityData = [
+//     { name: 'American', value: 30 },
+//     { name: 'British', value: 20 },
+//     { name: 'Canadian', value: 15 },
+//     { name: 'Nigerian', value: 10 },
+//     { name: 'Other', value: 25 },
+//   ];
+//   // Modern Palette: Blue gradient
+//   const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+
+//   const ageData = [
+//     { range: '0-18', count: 20 },
+//     { range: '19-30', count: 45 },
+//     { range: '31-50', count: 60 },
+//     { range: '51-70', count: 35 },
+//     { range: '70+', count: 15 },
+//   ];
+
+//   const roleData = [
+//     { role: 'Member', count: 150 },
+//     { role: 'Visitor', count: 30 },
+//     { role: 'Leader', count: 15 },
+//     { role: 'Volunteer', count: 25 },
+//   ];
+
+//   // --- CUSTOM TOOLTIP COMPONENT ---
+//   const CustomTooltip = ({ active, payload, label }) => {
+//     if (active && payload && payload.length) {
+//       return (
+//         <div className="bg-white border border-gray-100 p-3 shadow-lg rounded-lg text-sm">
+//           <p className="font-bold text-gray-800 mb-1">{label}</p>
+//           <p className="text-indigo-600 font-medium">
+//             {`${payload[0].name || 'Count'}: ${payload[0].value}`}
+//           </p>
+//         </div>
+//       );
+//     }
+//     return null;
+//   };
 
 //   return (
 //     <Card 
-//       // Display user's first name, fallback to 'User' if not available
-//       title={`Hello, ${user?.firstName || 'User'}`}
-//       // Pass our LogoutButton component to the Card header
+//       title="Churchlytics Dashboard"
 //       actionComponent={<SettingsMenu onLogout={handleLogout}/>}
+//       className="bg-gray-50" 
 //     >
-//       <div>
-//         <h3 className="text-lg font-bold text-gray-700 mb-4">Main Menu</h3>
-//         <div className="flex flex-col gap-3">
+//       <div className="flex flex-col gap-6 p-1">
+
+//         {/* --- ROW 1: Attendance Trend --- */}
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+//           <div className="flex justify-between items-center mb-6">
+//             <div>
+//                 <h3 className="font-bold text-gray-800 text-lg">Attendance Trends</h3>
+//                 <p className="text-gray-400 text-xs mt-1">Overview of service attendance</p>
+//             </div>
+            
+//             {/* Sleek Dropdown */}
+//             <div className="relative">
+//                 <select 
+//                   className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 pl-4 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:bg-gray-100 transition-colors"
+//                   value={timeFilter}
+//                   onChange={(e) => setTimeFilter(e.target.value)}
+//                 >
+//                   <option value="Day">Day</option>
+//                   <option value="Week">Week</option>
+//                   <option value="Month">Month</option>
+//                   <option value="Year">Year</option>
+//                 </select>
+//                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+//                   <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+//                 </div>
+//             </div>
+//           </div>
           
-//           {/* 1. Member Attendance Button (Active) */}
-//           <button 
-//             // variant="outline" 
-//             onClick={() => navigate('/dashboard')}
-//             // Custom Tailwind classes to match the design
-//             className="!bg-blue-50 !border-blue-200 text-left flex items-center gap-4 hover:!bg-blue-100 transition-colors p-4"
-//           >
-//             <div className="p-2 bg-blue-100 rounded-lg">
-//               <AttendanceIcon />
-//             </div>
-//             <div>
-//               <h4 className="font-bold text-blue-900">Member Attendance</h4>
-//               <p className="text-sm text-blue-700 font-normal">Take attendance for services and events.</p>
-//             </div>
-//           </button>
-
-//           {/* 2. Small Groups Button (Future/Disabled) */}
-//           <button 
-//             variant="outline" 
-//             disabled // Makes the button unclickable
-//             className="!bg-gray-50 !border-gray-200 text-left flex items-center gap-4 cursor-not-allowed p-4 opacity-70"
-//           >
-//             <div className="p-2 bg-gray-100 rounded-lg">
-//               <FutureIcon />
-//             </div>
-//             <div>
-//               <h4 className="font-bold text-gray-500">Small Groups (Future)</h4>
-//               <p className="text-sm text-gray-400 font-normal">Manage small group information.</p>
-//             </div>
-//           </button>
-
-//           {/* 3. Events Button (Future/Disabled) */}
-//           <button 
-//             variant="outline" 
-//             disabled
-//             className="!bg-gray-50 !border-gray-200 text-left flex items-center gap-4 cursor-not-allowed p-4 opacity-70"
-//           >
-//             <div className="p-2 bg-gray-100 rounded-lg">
-//               <FutureIcon />
-//             </div>
-//             <div>
-//               <h4 className="font-bold text-gray-500">Events (Future)</h4>
-//               <p className="text-sm text-gray-400 font-normal">Create and manage church events.</p>
-//             </div>
-//           </button>
-
+//           <div className="h-72 w-full">
+//             <ResponsiveContainer width="100%" height="100%">
+//               <LineChart data={attendanceData}>
+//                 <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+//                 <XAxis 
+//                     dataKey="date" 
+//                     axisLine={false} 
+//                     tickLine={false} 
+//                     tick={{fill: '#9ca3af', fontSize: 12}} 
+//                 />
+//                 {/* <YAxis/> */}
+//                 <YAxis hide/>
+//                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '4 4' }} />
+//                 <Line 
+//                   type="monotone" 
+//                   dataKey="count" 
+//                   stroke="#4f46e5" // Indigo 600
+//                   strokeWidth={4} 
+//                   dot={{ r: 4, strokeWidth: 2, fill: 'white', stroke: '#4f46e5' }}
+//                   activeDot={{ r: 6, strokeWidth: 0, fill: '#4f46e5' }}
+//                 />
+//               </LineChart>
+//             </ResponsiveContainer>
+//           </div>
 //         </div>
+
+//         {/* --- ROW 2: Demographics (Stacked Vertically) --- */}
+//         {/* Changed from Grid to Flex Column to stack them */}
+//         <div className="flex flex-col gap-6">
+          
+//           {/* Gender Pie Chart */}
+//           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+//             <h3 className="font-bold text-gray-800 mb-4 w-full text-left">Gender Distribution</h3>
+//             <div className="w-full h-64 relative">
+//               <ResponsiveContainer width="100%" height="100%">
+//                 <PieChart>
+//                   <Pie
+//                     data={genderData}
+//                     cx="50%"
+//                     cy="50%"
+//                     innerRadius="50%" 
+//                     outerRadius="70%" 
+//                     paddingAngle={5}
+//                     dataKey="value"
+//                     stroke="none"
+//                   >
+//                     {genderData.map((entry, index) => (
+//                       <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
+//                     ))}
+//                   </Pie>
+//                   <Tooltip />
+//                 </PieChart>
+//               </ResponsiveContainer>
+//             </div>
+            
+//             {/* Gender Legend */}
+//              <div className="flex gap-4 mt-2">
+//                 {genderData.map((entry, index) => (
+//                     <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
+//                         <span className="w-3 h-3 rounded-full" style={{backgroundColor: GENDER_COLORS[index]}}></span>
+//                         {entry.name}
+//                     </div>
+//                 ))}
+//              </div>
+//           </div>
+
+//           {/* Nationality Pie Chart */}
+//           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+//              <h3 className="font-bold text-gray-800 mb-4 w-full text-left">Nationality</h3>
+//             <div className="w-full h-64">
+//               <ResponsiveContainer width="100%" height="100%">
+//                 <PieChart>
+//                   <Pie
+//                     data={nationalityData}
+//                     cx="50%"
+//                     cy="50%"
+//                     innerRadius="50%"
+//                     outerRadius="70%"
+//                     paddingAngle={2}
+//                     dataKey="value"
+//                     stroke="none"
+//                   >
+//                      {nationalityData.map((entry, index) => (
+//                       <Cell key={`cell-${index}`} fill={NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]} /> 
+//                     ))}
+//                   </Pie>
+//                   <Tooltip />
+//                 </PieChart>
+//               </ResponsiveContainer>
+//             </div>
+            
+//             {/* Nationality Legend */}
+//             <div className="flex flex-wrap justify-center gap-3 mt-4">
+//                 {nationalityData.map((entry, index) => (
+//                     <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
+//                         <span 
+//                           className="w-3 h-3 rounded-full" 
+//                           style={{backgroundColor: NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]}}
+//                         ></span>
+//                         {entry.name}
+//                     </div>
+//                 ))}
+//              </div>
+//           </div>
+//         </div>
+
+//         {/* --- ROW 3: Age Distribution --- */}
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+//           <h3 className="font-bold text-gray-800 mb-6">Age Groups</h3>
+//           <div className="h-64 w-full">
+//             <ResponsiveContainer width="100%" height="100%">
+//               <BarChart data={ageData} barGap={0}>
+//                 <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+//                 <XAxis 
+//                     dataKey="range" 
+//                     axisLine={false} 
+//                     tickLine={false} 
+//                     tick={{fill: '#6b7280', fontSize: 12}} 
+//                     dy={10} 
+//                 />
+//                 <YAxis hide />
+//                 <Tooltip cursor={{fill: 'transparent'}} content={<CustomTooltip />} />
+//                 <Bar 
+//                     dataKey="count" 
+//                     fill="#a5b4fc" // Soft Indigo
+//                     radius={[4, 4, 0, 0]} // Rounded top corners
+//                     barSize={50}
+//                     activeBar={{ fill: '#6366f1' }} // Darker on hover
+//                 />
+//               </BarChart>
+//             </ResponsiveContainer>
+//           </div>
+//         </div>
+
+//         {/* --- ROW 4: Role Count --- */}
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+//            <h3 className="font-bold text-gray-800 mb-6">Member Roles</h3>
+//           <div className="h-64 w-full">
+//             <ResponsiveContainer width="100%" height="100%">
+//               <BarChart data={roleData} layout="vertical"> {/* Vertical layout for variety */}
+//                 <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+//                 <XAxis type="number" hide />
+//                 <YAxis 
+//                     dataKey="role" 
+//                     type="category" 
+//                     axisLine={false} 
+//                     tickLine={false}
+//                     tick={{fill: '#374151', fontSize: 13, fontWeight: 500}}
+//                     width={80}
+//                 />
+//                 <Tooltip cursor={{fill: 'transparent'}} content={<CustomTooltip />} />
+//                 <Bar 
+//                     dataKey="count" 
+//                     fill="#34d399" // Emerald Green
+//                     radius={[0, 4, 4, 0]} 
+//                     barSize={30} 
+//                 />
+//               </BarChart>
+//             </ResponsiveContainer>
+//           </div>
+//         </div>
+
 //       </div>
 //     </Card>
 //   );
 // };
 
-// export default Home;
+// export default Dashboard;
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Plot from 'react-plotly.js'; // Import Plotly
+import { 
+  LineChart, Line, 
+  BarChart, Bar, 
+  PieChart, Pie, Cell, 
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid 
+} from 'recharts';
 import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsMenu from '../../components/ui/SettingsMenu';
@@ -103,7 +298,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   
-  // State for the Time Filter Dropdown
+  // Default to 'Month' view
   const [timeFilter, setTimeFilter] = useState('Month');
 
   const handleLogout = () => {
@@ -111,180 +306,272 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  // --- DUMMY DATA ---
+  // --- DYNAMIC ATTENDANCE DATA ---
 
-  // 1. Attendance Data (Line Chart)
-  const attendanceData = [
-    {
-      x: ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01', '2023-05-01', '2023-06-01'],
-      y: [120, 150, 130, 170, 160, 200],
-      type: 'scatter',
-      mode: 'lines',
-      marker: { color: '#2563eb' }, // Blue
-      line: { shape: 'spline' }, // Smooth curves like the wireframe
-    },
+  // 1. Weekly Data (Days of the week)
+  const weeklyData = [
+    { label: 'Mon', count: 12 },
+    { label: 'Tue', count: 18 },
+    { label: 'Wed', count: 45 }, // Mid-week service?
+    { label: 'Thu', count: 20 },
+    { label: 'Fri', count: 35 },
+    { label: 'Sat', count: 80 },
+    { label: 'Sun', count: 210 }, // Sunday Service
   ];
 
-  // 2. Gender Data (Pie Chart)
-  const genderData = [
-    {
-      values: [45, 55],
-      labels: ['Male', 'Female'],
-      type: 'pie',
-      marker: { colors: ['#60a5fa', '#f472b6'] } // Light Blue, Pink
-    },
+  // 2. Monthly Data (Original)
+  const monthlyData = [
+    { label: 'Jan', count: 120 },
+    { label: 'Feb', count: 150 },
+    { label: 'Mar', count: 130 },
+    { label: 'Apr', count: 170 },
+    { label: 'May', count: 160 },
+    { label: 'Jun', count: 200 },
   ];
 
-  // 3. Nationality Data (Pie Chart)
+  // 3. Yearly Data (Years)
+  const yearlyData = [
+    { label: '2021', count: 4500 },
+    { label: '2022', count: 5200 },
+    { label: '2023', count: 4800 },
+    { label: '2024', count: 6100 },
+    { label: '2025', count: 7500 },
+  ];
+
+  // Logic to switch data based on dropdown
+  const getChartData = () => {
+    switch (timeFilter) {
+      case 'Week': return weeklyData;
+      case 'Year': return yearlyData;
+      case 'Month': 
+      default: return monthlyData;
+    }
+  };
+
+  // --- OTHER STATIC DATA ---
+  const genderData = [ { name: 'Male', value: 45 }, { name: 'Female', value: 55 } ];
+  const GENDER_COLORS = ['#6366f1', '#f43f5e']; 
+
   const nationalityData = [
-    {
-      values: [30, 20, 15, 10, 25],
-      labels: ['American', 'British', 'Canadian', 'Nigerian', 'Other'],
-      type: 'pie',
-      textinfo: 'none', // Hide text on slice to match wireframe style
-    },
+    { name: 'American', value: 30 }, { name: 'British', value: 20 },
+    { name: 'Canadian', value: 15 }, { name: 'Nigerian', value: 10 }, { name: 'Other', value: 25 },
   ];
+  const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
 
-  // 4. Age Distribution (Bar Chart)
   const ageData = [
-    {
-      x: ['0-18', '19-30', '31-50', '51-70', '70+'],
-      y: [20, 45, 60, 35, 15],
-      type: 'bar',
-      marker: { color: '#9ca3af' } // Gray
-    },
+    { range: '0-18', count: 20 }, { range: '19-30', count: 45 },
+    { range: '31-50', count: 60 }, { range: '51-70', count: 35 }, { range: '70+', count: 15 },
   ];
 
-  // 5. Role Count (Bar Chart)
   const roleData = [
-    {
-      x: ['Member', 'Visitor', 'Leader', 'Volunteer'],
-      y: [150, 30, 15, 25],
-      type: 'bar',
-      marker: { color: '#9ca3af' } // Gray
-    },
+    { role: 'Member', count: 150 }, { role: 'Visitor', count: 30 },
+    { role: 'Leader', count: 15 }, { role: 'Volunteer', count: 25 },
   ];
 
-  // Shared Layout Config for cleanliness
-  const commonLayout = {
-    autosize: true,
-    margin: { l: 40, r: 20, t: 30, b: 40 },
-    font: { family: 'inherit' },
-    paper_bgcolor: 'rgba(0,0,0,0)',
-    plot_bgcolor: 'rgba(0,0,0,0)',
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-100 p-3 shadow-lg rounded-lg text-xs">
+          <p className="font-bold text-gray-800 mb-1">{label}</p>
+          <p className="text-indigo-600 font-medium">
+            {`${payload[0].name || 'Count'}: ${payload[0].value}`}
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
     <Card 
       title="Churchlytics Dashboard"
       actionComponent={<SettingsMenu onLogout={handleLogout}/>}
+      className="bg-gray-50" 
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 p-1">
 
-        {/* --- ROW 1: Attendance Over Time --- */}
-        <div className="border border-gray-300 p-4 rounded-md">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-semibold text-gray-700">Attendance over time</h3>
-            {/* Time Dropdown */}
-            <select 
-              className="border border-gray-400 rounded px-2 py-1 text-sm bg-white"
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
-            >
-              <option value="Day">Day</option>
-              <option value="Week">Week</option>
-              <option value="Month">Month</option>
-              <option value="Year">Year</option>
-            </select>
+        {/* --- ROW 1: Attendance Trend --- */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+                <h3 className="font-bold text-gray-800 text-lg">Attendance Trends</h3>
+                <p className="text-gray-400 text-xs mt-1">
+                    {/* Dynamic Subtitle */}
+                    Overview of attendance by {timeFilter.toLowerCase()}
+                </p>
+            </div>
+            
+            {/* Filter Dropdown */}
+            <div className="relative">
+                <select 
+                  className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 pl-4 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:bg-gray-100 transition-colors"
+                  value={timeFilter}
+                  onChange={(e) => setTimeFilter(e.target.value)}
+                >
+                  <option value="Week">Week</option>
+                  <option value="Month">Month</option>
+                  <option value="Year">Year</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+            </div>
           </div>
           
-          <div className="h-64 w-full border border-gray-800">
-            <Plot
-              data={attendanceData}
-              layout={{
-                ...commonLayout,
-                title: '',
-                xaxis: { showgrid: false },
-                yaxis: { showgrid: false },
-              }}
-              useResizeHandler={true}
-              style={{ width: "100%", height: "100%" }}
-              config={{ displayModeBar: false }}
-            />
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={getChartData()}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis 
+                    dataKey="label" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fill: '#9ca3af', fontSize: 10}} 
+                    dy={10}
+                />
+                <YAxis hide/>
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="#4f46e5" 
+                  strokeWidth={4} 
+                  dot={{ r: 4, strokeWidth: 2, fill: 'white', stroke: '#4f46e5' }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#4f46e5' }}
+                  animationDuration={800} // Smooth transition when data changes
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* --- ROW 2: Gender & Nationality (Grid) --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
+        {/* --- ROW 2: Demographics --- */}
+        <div className="flex flex-col gap-6">
           {/* Gender */}
-          <div className="flex flex-col items-center">
-            <div className="border border-black px-4 py-1 mb-2 bg-white font-medium">
-              Gender
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+            <h3 className="font-bold text-gray-800 mb-4 w-full text-left">Gender Distribution</h3>
+            <div className="w-full h-64 relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={genderData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="50%" 
+                    outerRadius="70%" 
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {genderData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="w-full h-64">
-              <Plot
-                data={genderData}
-                layout={{ ...commonLayout, showlegend: false }}
-                useResizeHandler={true}
-                style={{ width: "100%", height: "100%" }}
-                config={{ displayModeBar: false }}
-              />
-            </div>
+             <div className="flex gap-4 mt-2">
+                {genderData.map((entry, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
+                        <span className="w-3 h-3 rounded-full" style={{backgroundColor: GENDER_COLORS[index]}}></span>
+                        {entry.name}
+                    </div>
+                ))}
+             </div>
           </div>
 
           {/* Nationality */}
-          <div className="flex flex-col items-center">
-            <div className="border border-black px-4 py-1 mb-2 bg-white font-medium">
-              Nationality
-            </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+             <h3 className="font-bold text-gray-800 mb-4 w-full text-left">Nationality</h3>
             <div className="w-full h-64">
-              <Plot
-                data={nationalityData}
-                layout={{ ...commonLayout, showlegend: false }}
-                useResizeHandler={true}
-                style={{ width: "100%", height: "100%" }}
-                config={{ displayModeBar: false }}
-              />
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={nationalityData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="50%"
+                    outerRadius="70%"
+                    paddingAngle={2}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                     {nationalityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]} /> 
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
+            <div className="flex flex-wrap justify-center gap-3 mt-4">
+                {nationalityData.map((entry, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
+                        <span 
+                          className="w-3 h-3 rounded-full" 
+                          style={{backgroundColor: NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]}}
+                        ></span>
+                        {entry.name}
+                    </div>
+                ))}
+             </div>
           </div>
         </div>
 
         {/* --- ROW 3: Age Distribution --- */}
-        <div className="border border-gray-300 p-4 rounded-md">
-          <div className="border border-black px-4 py-1 inline-block mb-2 bg-white font-medium">
-            Age distribution
-          </div>
-          <div className="h-64 w-full border border-gray-800">
-            <Plot
-              data={ageData}
-              layout={{
-                ...commonLayout,
-                bargap: 0.1,
-              }}
-              useResizeHandler={true}
-              style={{ width: "100%", height: "100%" }}
-              config={{ displayModeBar: false }}
-            />
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-800 mb-6">Age Groups</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={ageData} barGap={0}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis 
+                    dataKey="range" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fill: '#6b7280', fontSize: 10}} 
+                    dy={10} 
+                />
+                <YAxis hide />
+                <Tooltip cursor={{fill: 'transparent'}} content={<CustomTooltip />} />
+                <Bar 
+                    dataKey="count" 
+                    fill="#a5b4fc" 
+                    radius={[4, 4, 0, 0]} 
+                    barSize={50}
+                    activeBar={{ fill: '#6366f1' }} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
         {/* --- ROW 4: Role Count --- */}
-        <div className="border border-gray-300 p-4 rounded-md">
-           <div className="border border-black px-4 py-1 inline-block mb-2 bg-white font-medium">
-            Role Count
-          </div>
-          <div className="h-64 w-full border border-gray-800">
-            <Plot
-              data={roleData}
-              layout={{
-                ...commonLayout,
-                bargap: 0.1,
-              }}
-              useResizeHandler={true}
-              style={{ width: "100%", height: "100%" }}
-              config={{ displayModeBar: false }}
-            />
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+           <h3 className="font-bold text-gray-800 mb-6">Member Roles</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={roleData} layout="vertical"> 
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis type="number" hide />
+                <YAxis 
+                    dataKey="role" 
+                    type="category" 
+                    axisLine={false} 
+                    tickLine={false}
+                    tick={{fill: '#374151', fontSize: 13, fontWeight: 500}}
+                    width={80}
+                />
+                <Tooltip cursor={{fill: 'transparent'}} content={<CustomTooltip />} />
+                <Bar 
+                    dataKey="count" 
+                    fill="#34d399" 
+                    radius={[0, 4, 4, 0]} 
+                    barSize={30} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
