@@ -99,7 +99,7 @@ const AddMember = () => {
             className="w-full p-3 border rounded-lg mt-1 bg-white"
           >
             <option value="Member">Member</option>
-            <option value="Member">Visitor</option>
+            <option value="Visitor">Visitor</option>
             <option value="Deacon">Deacon</option>
             <option value="Treasurer">Treasurer</option>
             <option value="Sabbath School Sup">Sabbath School Sup</option>
