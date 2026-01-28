@@ -180,3 +180,21 @@ export const getAttendance = async (eventName, date) => {
     return { status: "error", presentMemberIds: [] };
   }
 };
+
+/**
+ * Gets attendance counts aggregated by day, month and year
+ */
+export const getAttendanceStats = async () => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getAttendanceByTime" // No arguments needed
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching attendance stats:", error);
+    return { status: "error", data: {} };
+  }
+};
