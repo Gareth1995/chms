@@ -1,16 +1,25 @@
-# React + Vite
+# Church Analytics App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This application serves to provide member insights for a church body by tracking attendance over time using an easy to use and intuitive interface. You can track attendance on any custom event and view the trends over time. One can also see distributions of gender, age and other demographics.
 
-Currently, two official plugins are available:
+This is to provide a church insight on their members so that they can tailor their services accordingly.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# Database
 
-## React Compiler
+The database consists of 5 tables
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- User
+- Members
+- Attendance
+- Events
+- Updates
 
-## Expanding the ESLint configuration
+Where the **User** table is a table of all app users. This is used for login and data filterin purposes. For example, if you are a user from a specified church you will only see the data for that specified church on the application interface.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The **Member** table is a table of all members of your church.
+
+the **Updates** table keeps track of any member updates created over time as an audit list of how member data has changed over time.
+
+The **Attendance** table is a simple table that tracks member attendance over time. Everytime you input attendance it saves on the attendance table.
+
+The **Events** table is a table of events that the user wishes to track attendance for. These events can be created on the fly in the app.
