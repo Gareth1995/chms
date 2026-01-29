@@ -9,7 +9,7 @@ import {
 import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsMenu from '../../components/ui/SettingsMenu';
-import { getEvents, getAttendanceStats, getMemberGenderStats } from '../../services/api';
+import { getEvents, getAttendanceStats, getMemberGenderStats, getNationalityStats } from '../../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -29,6 +29,11 @@ const Dashboard = () => {
   ]);
   const GENDER_COLORS = ['#6366f1', '#f43f5e']; 
 
+  const [nationalityData, setNationalityData] = useState([]);
+  
+  // Keep colors static
+  const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -37,10 +42,11 @@ const Dashboard = () => {
       setLoading(true);
       try {
         // Fetch Events List AND All Stats in parallel
-        const [eventsRes, statsRes, genderRes] = await Promise.all([
+        const [eventsRes, statsRes, genderRes, natRes] = await Promise.all([
           getEvents(),
           getAttendanceStats(),
-          getMemberGenderStats()
+          getMemberGenderStats(),
+          getNationalityStats()
         ]);
 
         // A. Handle Events List
@@ -65,6 +71,16 @@ const Dashboard = () => {
           }));
           
           setGenderData(coloredData);
+        }
+
+        // D. Handle Nationality Stats
+        if (natRes?.status === 'success' && natRes.nationalityData) {
+           // Merge colors into data for cleaner JSX
+           const coloredNatData = natRes.nationalityData.map((item, index) => ({
+             ...item,
+             fill: NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]
+           }));
+           setNationalityData(coloredNatData);
         }
 
       } catch (error) {
@@ -112,11 +128,11 @@ const Dashboard = () => {
   // const genderData = [ { name: 'Male', value: 45 }, { name: 'Female', value: 55 } ];
   
 
-  const nationalityData = [
-    { name: 'American', value: 30 }, { name: 'British', value: 20 },
-    { name: 'Canadian', value: 15 }, { name: 'Nigerian', value: 10 }, { name: 'Other', value: 25 },
-  ];
-  const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+  // const nationalityData = [
+  //   { name: 'American', value: 30 }, { name: 'British', value: 20 },
+  //   { name: 'Canadian', value: 15 }, { name: 'Nigerian', value: 10 }, { name: 'Other', value: 25 },
+  // ];
+  // const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
 
   const ageData = [
     { range: '0-18', count: 20 }, { range: '19-30', count: 45 },
@@ -287,9 +303,9 @@ const Dashboard = () => {
                     dataKey="value"
                     stroke="none"
                   >
-                     {nationalityData.map((entry, index) => (
+                     {/* {nationalityData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]} /> 
-                    ))}
+                    ))} */}
                   </Pie>
                   <Tooltip />
                 </PieChart>
