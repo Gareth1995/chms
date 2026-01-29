@@ -213,3 +213,18 @@ export const getMemberGenderStats = async () => {
     return { status: "error", genderData: [] };
   }
 };
+
+export const getNationalityStats = async () => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getNationalityStats"
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching nationality stats:", error);
+    return { status: "error", nationalityData: [] };
+  }
+};
