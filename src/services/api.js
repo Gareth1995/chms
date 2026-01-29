@@ -198,3 +198,18 @@ export const getAttendanceStats = async () => {
     return { status: "error", data: {} };
   }
 };
+
+export const getMemberGenderStats = async () => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getMemberGenderStats"
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching member stats:", error);
+    return { status: "error", genderData: [] };
+  }
+};
