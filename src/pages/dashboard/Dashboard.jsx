@@ -9,7 +9,7 @@ import {
 import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsMenu from '../../components/ui/SettingsMenu';
-import { getEvents, getAttendanceStats } from '../../services/api';
+import { getEvents, getAttendanceStats, getMemberGenderStats } from '../../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,12 +23,11 @@ const Dashboard = () => {
   const [allStats, setAllStats] = useState({});
   const [eventsList, setEventsList] = useState([]);
 
-  // Store the 3 pre-calculated datasets from the server
-  const [chartDataSets, setChartDataSets] = useState({
-      weekly: [],
-      monthly: [],
-      yearly: []
-  });
+  const [genderData, setGenderData] = useState([
+    { name: 'Male', value: 0 }, 
+    { name: 'Female', value: 0 }
+  ]);
+  const GENDER_COLORS = ['#6366f1', '#f43f5e']; 
 
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -38,9 +37,10 @@ const Dashboard = () => {
       setLoading(true);
       try {
         // Fetch Events List AND All Stats in parallel
-        const [eventsRes, statsRes] = await Promise.all([
+        const [eventsRes, statsRes, genderRes] = await Promise.all([
           getEvents(),
-          getAttendanceStats()
+          getAttendanceStats(),
+          getMemberGenderStats()
         ]);
 
         // A. Handle Events List
@@ -54,6 +54,17 @@ const Dashboard = () => {
         // B. Handle Master Stats Object
         if (statsRes?.status === 'success' && statsRes.data) {
           setAllStats(statsRes.data);
+        }
+
+        // C. Handle Gender Stats
+        if (genderRes?.status === 'success' && genderRes.genderData) {
+          // Merge the colors into the data objects
+          const coloredData = genderRes.genderData.map((item, index) => ({
+              ...item,
+              fill: GENDER_COLORS[index % GENDER_COLORS.length] // Add 'fill' directly to data
+          }));
+          
+          setGenderData(coloredData);
         }
 
       } catch (error) {
@@ -87,38 +98,6 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  // --- DYNAMIC ATTENDANCE DATA ---
-
-  // 1. Weekly Data (Days of the week)
-  // const weeklyData = [
-  //   { label: 'Mon', count: 12 },
-  //   { label: 'Tue', count: 18 },
-  //   { label: 'Wed', count: 45 }, // Mid-week service?
-  //   { label: 'Thu', count: 20 },
-  //   { label: 'Fri', count: 35 },
-  //   { label: 'Sat', count: 80 },
-  //   { label: 'Sun', count: 210 }, // Sunday Service
-  // ];
-
-  // 2. Monthly Data (Original)
-  // const monthlyData = [
-  //   { label: 'Jan', count: 120 },
-  //   { label: 'Feb', count: 150 },
-  //   { label: 'Mar', count: 130 },
-  //   { label: 'Apr', count: 170 },
-  //   { label: 'May', count: 160 },
-  //   { label: 'Jun', count: 200 },
-  // ];
-
-  // 3. Yearly Data (Years)
-  // const yearlyData = [
-  //   { label: '2021', count: 4500 },
-  //   { label: '2022', count: 5200 },
-  //   { label: '2023', count: 4800 },
-  //   { label: '2024', count: 6100 },
-  //   { label: '2025', count: 7500 },
-  // ];
-
   // Logic to switch data based on dropdown
   const getChartData = () => {
     switch (timeFilter) {
@@ -130,8 +109,8 @@ const Dashboard = () => {
   };
 
   // --- OTHER STATIC DATA ---
-  const genderData = [ { name: 'Male', value: 45 }, { name: 'Female', value: 55 } ];
-  const GENDER_COLORS = ['#6366f1', '#f43f5e']; 
+  // const genderData = [ { name: 'Male', value: 45 }, { name: 'Female', value: 55 } ];
+  
 
   const nationalityData = [
     { name: 'American', value: 30 }, { name: 'British', value: 20 },
@@ -277,9 +256,6 @@ const Dashboard = () => {
                     dataKey="value"
                     stroke="none"
                   >
-                    {genderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
-                    ))}
                   </Pie>
                   <Tooltip />
                 </PieChart>
