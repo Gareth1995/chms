@@ -228,3 +228,19 @@ export const getNationalityStats = async () => {
     return { status: "error", nationalityData: [] };
   }
 };
+
+export const getChurchNames = async () => {
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getChurchNames"
+            })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching church names:", error);
+        // Return an empty list so the app doesn't crash
+        return { status: "error", churches: [] };
+    }
+};

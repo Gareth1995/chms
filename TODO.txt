@@ -57,7 +57,7 @@ Where event id will be in the form e{date}{5 digit random salt} eg e202601110987
 02/02/2026
 --------------------------------------------------------------------------------------
 - Add Church database (with church_id | church_name | church_address)
-    - church_id will be a hex of church_name + church_address
+    - church_id will be assigned by admin as we add churches who opt in to the application (Done)
 
 - Link every user to a church (when registering there should be a church selection dropdown)
 
