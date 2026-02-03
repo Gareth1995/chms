@@ -1,29 +1,6 @@
 // Open the sheet by ID or just use the active one since the script is bound
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-// 1. Handle Reading Data (GET Requests)
-// function doGet(e) {
-//   const action = e.parameter.action;
-  
-//   if (action === "getMembers") {
-//     const sheet = ss.getSheetByName("Members");
-//     const rows = sheet.getDataRange().getValues();
-//     const headers = rows[0];
-//     const data = rows.slice(1); // Remove headers
-
-//     // Convert rows to Array of Objects
-//     const members = data.map(row => {
-//       return {
-//         id: row[0],
-//         name: row[1],
-//         category: row[2]
-//       };
-//     });
-
-//     return sendJSON(members);
-//   }
-// }
-
 // 2. Handle Writing Data (POST Requests)
 function doPost(e) {
 
@@ -67,27 +44,28 @@ function doPost(e) {
       return addEvent(data);
     }
 
-    if (action === "saveAttendance") {
-      const sheet = ss.getSheetByName("Attendance");
-      const timestamp = new Date();
-      
-      // We expect data.records to be an array of { memberId, status }
-      // But for simplicity, let's just loop what we get
-      const newRows = data.records.map(record => {
-        return [
-          timestamp,
-          data.eventName,
-          record.memberId,
-          record.status // e.g., "Present", "Absent"
-        ];
-      });
+    if (data.action === "deleteEvent") {
+      return deleteEvent(data);
+    }
 
-      // Append all rows at once
-      if (newRows.length > 0) {
-        sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 4).setValues(newRows);
-      }
+    if (data.action === "addAttendance") {
+      return addAttendanceBatch(data);
+    }
 
-      return sendJSON({ status: "success", count: newRows.length });
+    if (data.action === "getAttendance") {
+      return getAttendance(data);
+    }
+
+    if (action === "getAttendanceByTime") {
+      return getAttendanceByTime(data);
+    }
+
+    if (action === 'getMemberGenderStats') {
+      return getMemberGenderStats();
+    }
+
+    if (action === 'getNationalityStats') {
+      return getNationalityStats();
     }
   } catch (error) {
     return sendJSON({ status: "error", message: error.toString() });
@@ -456,8 +434,529 @@ function addEvent(data) {
   return sendJSON({ status: "success", message: "Event added", eventName: data.eventName });
 }
 
+function deleteEvent(data) {
+  const sheet = ss.getSheetByName("Events");
+  if (!sheet) {
+    return sendJSON({ status: "error", message: "Sheet not found" });
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const nameToDelete = String(data.eventName).trim().toLowerCase();
+  
+  // Loop through rows to find the match
+  // We start loop at 1 to skip header
+  for (let i = 1; i < rows.length; i++) {
+    // Assuming Event Name is in Column B (index 1)
+    const currentName = String(rows[i][1]).trim().toLowerCase();
+
+    if (currentName === nameToDelete) {
+      // deleteRow takes a 1-based index. 
+      // The array index 'i' is 0-based, so row number is i + 1
+      sheet.deleteRow(i + 1);
+      
+      return sendJSON({ status: "success", message: "Event deleted" });
+    }
+  }
+
+  return sendJSON({ status: "error", message: "Event not found" });
+}
+
+function addAttendanceBatch(data) {
+  let sheet = ss.getSheetByName("Attendance");
+  
+  if (!sheet) {
+    sheet = ss.insertSheet("Attendance");
+    // Header order: Member ID | Event | Status | Date | Timestamp
+    sheet.appendRow(["member_id", "event_name", "status", "date", "timestamp"]); 
+  }
+
+  const records = data.records; 
+  if (!records || records.length === 0) {
+    return sendJSON({ status: "success", message: "No records to save" });
+  }
+
+  // 1. Generate Timestamp only (Date comes from frontend now)
+  const now = new Date();
+  const timestamp = now.toISOString();
+
+  // 2. READ EXISTING DATA
+  const lastRow = sheet.getLastRow();
+  let existingData = [];
+  let existingMap = new Map();
+
+  if (lastRow > 1) {
+    existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+    
+    existingData.forEach((row, index) => {
+      // Row: [0]ID, [1]Event, [2]Status, [3]Date, [4]Time
+      let rowDate = row[3];
+      if (rowDate instanceof Date) {
+        rowDate = Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      }
+      
+      // Key includes Date so we can differentiate events on different days
+      const key = `${row[0]}_${row[1]}_${rowDate}`; 
+      existingMap.set(key, index); 
+    });
+  }
+
+  // 3. PROCESS RECORDS
+  const newRows = [];
+  let updatesMade = false;
+
+  records.forEach(record => {
+    // USE DATE FROM FRONTEND
+    const recordDate = record.date; 
+
+    const key = `${record.member_id}_${record.event_name}_${recordDate}`;
+
+    if (existingMap.has(key)) {
+      // --- UPDATE EXISTING ROW ---
+      const rowIndex = existingMap.get(key);
+      
+      existingData[rowIndex][2] = record.status; // Update Status
+      existingData[rowIndex][4] = timestamp;     // Update 'Last Modified' Time
+      
+      updatesMade = true;
+    } else {
+      // --- CREATE NEW ROW ---
+      newRows.push([
+        record.member_id,
+        record.event_name,
+        record.status,
+        recordDate,      // <--- Use Date from UI
+        timestamp
+      ]);
+      
+      existingMap.set(key, existingData.length + newRows.length); 
+    }
+  });
+
+  // 4. WRITE CHANGES
+  if (updatesMade && existingData.length > 0) {
+    sheet.getRange(2, 1, existingData.length, 5).setValues(existingData);
+  }
+
+  if (newRows.length > 0) {
+    sheet.getRange(lastRow + 1, 1, newRows.length, 5).setValues(newRows);
+  }
+
+  return sendJSON({ 
+    status: "success", 
+    message: "Attendance captured", 
+    new_rows: newRows.length,
+    updated_rows: updatesMade ? "Yes" : "No"
+  });
+}
+
+function getAttendance(data) {
+  const sheet = ss.getSheetByName("Attendance");
+  if (!sheet) return sendJSON({ status: "success", records: [] });
+
+  const rows = sheet.getDataRange().getValues();
+  const targetEvent = data.eventName;
+  const targetDate = data.date; // Expecting "YYYY-MM-DD"
+  
+  const foundRecords = [];
+
+  // Skip header (i=1)
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    // Col 1: Event Name, Col 2: Status, Col 3: Date (Indices based on your last structure)
+    // Your structure: [member_id, event_name, status, date, timestamp]
+    
+    const eventName = row[1];
+    const status = row[2];
+    let dateVal = row[3];
+
+    // Format date from sheet to string for comparison
+    if (dateVal instanceof Date) {
+      dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    }
+
+    if (eventName === targetEvent && dateVal === targetDate && status == 1) {
+      foundRecords.push(row[0]); // Push member_id
+    }
+  }
+
+  return sendJSON({ status: "success", presentMemberIds: foundRecords });
+}
+
+function getAttendanceByTime() {
+  const sheet = ss.getSheetByName("Attendance");
+  
+  if (!sheet) {
+    return sendJSON({ status: "success", data: {} });
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const timeZone = Session.getScriptTimeZone();
+
+  // STRUCTURE: 
+  // { 
+  //   "Divine Service": { daily: {}, monthly: {Jan: Set(), ...}, yearly: {2026: Set()} },
+  //   ...
+  // }
+  const masterStats = {};
+
+  // --- ITERATE DATA ---
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    
+    // Column Mapping based on your table:
+    // 0: member_id, 1: event_name, 2: status, 3: date
+    const memberId = String(row[0]); // Ensure ID is a string
+    const eventName = row[1];
+    const status = Number(row[2]); 
+    const rawDate = row[3]; 
+
+    // Skip invalid rows
+    if (status === 0 || !eventName) continue; 
+
+    // Parse Date
+    let dateObj;
+    if (rawDate instanceof Date) {
+      dateObj = rawDate;
+    } else {
+      dateObj = new Date(rawDate);
+    }
+    if (isNaN(dateObj.getTime())) continue;
+
+    // Initialize this Event's bucket if it doesn't exist yet
+    if (!masterStats[eventName]) {
+      masterStats[eventName] = {
+        dailyMap: {},
+        // Initialize months with empty Sets to track unique IDs
+        monthsMap: { 
+          'Jan': new Set(), 'Feb': new Set(), 'Mar': new Set(), 'Apr': new Set(), 
+          'May': new Set(), 'Jun': new Set(), 'Jul': new Set(), 'Aug': new Set(), 
+          'Sep': new Set(), 'Oct': new Set(), 'Nov': new Set(), 'Dec': new Set() 
+        },
+        yearsMap: {} // Will contain Sets: { '2026': new Set() }
+      };
+    }
+
+    const stats = masterStats[eventName];
+
+    // --- 1. DAILY/WEEKLY (Keep as Total Attendance Volume) ---
+    // We usually keep daily as raw volume (including visitors) for trend analysis
+    const sortKey = Utilities.formatDate(dateObj, timeZone, "yyyy-MM-dd");
+    const dayLabel = Utilities.formatDate(dateObj, timeZone, "EEE yy-MM-dd");
+
+    if (!stats.dailyMap[sortKey]) {
+      stats.dailyMap[sortKey] = { label: dayLabel, count: 0 };
+    }
+    stats.dailyMap[sortKey].count += status;
+
+    // --- 2. MONTHLY & YEARLY (Distinct Members, Exclude UV) ---
+    if (memberId !== 'UV') {
+        const monthLabel = Utilities.formatDate(dateObj, timeZone, "MMM"); 
+        const yearLabel = Utilities.formatDate(dateObj, timeZone, "yyyy"); 
+
+        // Add Member ID to the Set (Set automatically handles uniqueness)
+        if (stats.monthsMap[monthLabel]) {
+            stats.monthsMap[monthLabel].add(memberId);
+        }
+
+        if (!stats.yearsMap[yearLabel]) {
+            stats.yearsMap[yearLabel] = new Set();
+        }
+        stats.yearsMap[yearLabel].add(memberId);
+    }
+  }
+
+  // --- FORMAT OUTPUT ---
+  const finalOutput = {};
+
+  for (const event in masterStats) {
+    const stats = masterStats[event];
+
+    // Format Daily (Standard Count)
+    const weeklyData = Object.keys(stats.dailyMap).sort().map(key => ({
+      label: stats.dailyMap[key].label,
+      count: stats.dailyMap[key].count
+    }));
+
+    // Format Monthly (Distinct Count = Set Size)
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyData = monthOrder
+      .map(month => ({ 
+          label: month, 
+          count: stats.monthsMap[month].size // Get size of Set
+      }))
+      .filter(item => item.count > 0);
+
+    // Format Yearly (Distinct Count = Set Size)
+    const yearlyData = Object.keys(stats.yearsMap).sort()
+      .map(year => ({ 
+          label: year, 
+          count: stats.yearsMap[year].size // Get size of Set
+      }))
+      .filter(item => item.count > 0);
+
+    finalOutput[event] = {
+      weekly: weeklyData,
+      monthly: monthlyData,
+      yearly: yearlyData
+    };
+  }
+
+  return sendJSON({
+    status: "success",
+    data: finalOutput
+  });
+}
+
+function getMemberGenderStats() {
+  const sheet = ss.getSheetByName("Members");
+  
+  if (!sheet) {
+    // Return zeros if sheet is missing to prevent crash
+    return sendJSON({ 
+      status: "success", 
+      genderData: [{ name: 'Male', value: 0 }, { name: 'Female', value: 0 }] 
+    });
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  
+  // Initialize counters
+  let maleCount = 0;
+  let femaleCount = 0;
+
+  // Iterate rows (Skip header i=1)
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    
+    // ADJUST THIS INDEX based on your Members sheet column
+    // Example: If Gender is Column C (index 2)
+    const gender = String(row[4]).trim().toLowerCase(); 
+
+    if (gender === 'male' || gender === 'm') {
+      maleCount++;
+    } else if (gender === 'female' || gender === 'f') {
+      femaleCount++;
+    }
+  }
+
+  // Format exactly as Recharts expects
+  const genderData = [
+    { name: 'Male', value: maleCount },
+    { name: 'Female', value: femaleCount }
+  ];
+
+  return sendJSON({
+    status: "success",
+    genderData: genderData
+  });
+}
+
+function getNationalityStats() {
+  const sheet = ss.getSheetByName("Members");
+  
+  if (!sheet) {
+    return sendJSON({ status: "success", nationalityData: [] });
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const counts = {};
+
+  // Iterate rows (Skip header i=1)
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    
+    // --- ADJUST INDEX HERE ---
+    // Assuming Nationality is Column 4 (Index 3)
+    // If it's Column E, use row[4], etc.
+    let nationality = String(row[3]).trim(); 
+    
+    // Normalize text (optional: Capitalize first letter)
+    if (!nationality) nationality = "Unknown";
+    nationality = nationality.charAt(0).toUpperCase() + nationality.slice(1).toLowerCase();
+
+    if (!counts[nationality]) {
+      counts[nationality] = 0;
+    }
+    counts[nationality]++;
+  }
+
+  // Convert map to array format: [{ name: 'American', value: 30 }, ...]
+  const nationalityData = Object.keys(counts).map(key => ({
+    name: key,
+    value: counts[key]
+  }));
+
+  // Optional: Sort by count descending so biggest slices are first
+  nationalityData.sort((a, b) => b.value - a.value);
+
+  return sendJSON({
+    status: "success",
+    nationalityData: nationalityData
+  });
+}
+
+function testGetNationalityStats() {
+  // 1. Create the mock request object
+  const mockEvent = {
+    postData: {
+      contents: JSON.stringify({
+        action: "getNationalityStats" 
+      })
+    }
+  };
+
+  // 2. Call doPost directly to test routing and logic
+  console.log("--- Running testGetNationalityStats ---");
+  const result = doPost(mockEvent);
+
+  // 3. Log the output
+  console.log("Result Payload:");
+  console.log(result.getContent());
+}
+
+function testGetAttendanceByTime() {
+  // 1. Define test cases
+  const testCases = [
+    { description: "Fetch ALL events", input: {} },
+    { description: "Fetch specific event (Divine Service)", input: { eventName: "Divine Service" }},
+    { description: "Fetch specific event (Prayer Meeting)", input: { eventName: "Prayer Meeting" } }
+  ];
+
+  // 2. Run tests
+  testCases.forEach(test => {
+    console.log("--- Running Test: " + test.description + " ---");
+    
+    // Call the function directly
+    const resultJSON = getAttendanceByTime(test.input);
+    
+    // Parse the JSON string back to an object for inspection
+    // Note: In GAS, ContentService returns an object wrapper, so we simulate the output object
+    // If your sendJSON returns ContentService, we can't parse it easily in the logger.
+    // Instead, for testing, let's look at the logic inside.
+    
+    // For debugging, it's easier if we temporarily return the raw object instead of sendJSON
+    // OR, we can mock sendJSON to just log the output.
+    console.log("Result Payload:");
+    console.log(resultJSON.getContent()); // getContent() reveals the stringified JSON
+  });
+}
+
 // testing functions
-// testing registration
+function testAddAttendanceBatch() {
+  console.log("--- 🧪 STARTING TEST: addAttendanceBatch ---");
+
+  // --- STEP 1: CONFIGURE TEST DATA ---
+  // Change this value from 1 to 0 and run the script again to test the UPDATE logic.
+  const TEST_STATUS_1 = 0; 
+  const TEST_STATUS_2 = 1; 
+
+  const mockData = {
+    action: "addAttendance",
+    records: [
+      { 
+        // This record will switch status based on the variable above
+        member_id: "TEST_USER_001", 
+        event_name: "Test Event Alpha", 
+        status: TEST_STATUS_1,
+        date: "2026-01-16" 
+      },
+      { 
+        // This record stays the same
+        member_id: "TEST_USER_002", 
+        event_name: "Test Event Alpha", 
+        status: TEST_STATUS_2,
+        date: "2026-01-16"  
+      }
+    ]
+  };
+
+  console.log("Incoming Payload:", JSON.stringify(mockData));
+
+  // --- STEP 2: EXECUTE FUNCTION ---
+  try {
+    const response = addAttendanceBatch(mockData);
+    
+    // Parse the JSON response to read it in the logs
+    const result = JSON.parse(response.getContent());
+
+    // --- STEP 3: ANALYZE RESULTS ---
+    console.log("--------------------------------");
+    console.log("✅ API Response Received");
+    console.log("Status:", result.status);
+    console.log("Message:", result.message);
+    console.log("New Rows Created:", result.new_rows);
+    console.log("Existing Rows Updated:", result.updated_rows);
+    console.log("--------------------------------");
+
+  } catch (error) {
+    console.error("❌ ERROR FAILED:", error.toString());
+  }
+}
+
+function testGetAttendance() {
+  console.log("--- 🔎 STARTING TEST: getAttendance ---");
+
+  // --- CONFIGURATION ---
+  // Ensure this matches the data you previously added to the sheet
+  const TEST_EVENT = "Test Event Alpha"; 
+  
+  // Format must match strictly: YYYY-MM-DD
+  // Use the date from your 'Attendance' column D
+  const TEST_DATE = "2026-01-18"; 
+
+  const mockPayload = {
+    action: "getAttendance",
+    eventName: TEST_EVENT,
+    date: TEST_DATE
+  };
+
+  console.log(`Requesting: ${TEST_EVENT} on ${TEST_DATE}`);
+
+  // --- EXECUTION ---
+  try {
+    const response = getAttendance(mockPayload);
+    const result = JSON.parse(response.getContent());
+
+    // --- ANALYSIS ---
+    console.log("--------------------------------");
+    console.log("✅ API Response Received");
+    
+    if (result.status === "success") {
+      const ids = result.presentMemberIds;
+      console.log(`Count Found: ${ids.length}`);
+      console.log("Member IDs Present:", ids);
+      
+      if (ids.length > 0) {
+        console.log("✅ SUCCESS: Data was retrieved.");
+      } else {
+        console.log("⚠️ WARNING: No members found. Check if Event/Date match the sheet exactly.");
+      }
+    } else {
+      console.log("❌ FAILED: " + result.message);
+    }
+    console.log("--------------------------------");
+
+  } catch (error) {
+    console.error("❌ ERROR FAILED:", error.toString());
+  }
+}
+
+function testDeleteEvents() {
+  // 1. Create fake data (mocking what React would send)
+  const mockdelete = {
+    postData: {
+      contents: JSON.stringify({
+        action: "deleteEvent",
+        eventName: "Janitors Class"
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(mockdelete);
+}
+
 function testAddEvents() {
   // 1. Create fake data (mocking what React would send)
   const mockmember = {
@@ -487,6 +986,26 @@ function testGetEvents(){
   // 2. Call your main function directly
   // const result = doPost(mockEvent);
   doPost(getEveTest);
+}
+
+function testGetMemberGenderStats() {
+  // 1. Create the mock request object
+  const mockEvent = {
+    postData: {
+      contents: JSON.stringify({
+        action: "getMemberGenderStats" 
+      })
+    }
+  };
+
+  // 2. Call doPost directly
+  console.log("--- Running testGetMemberStats ---");
+  const result = doPost(mockEvent);
+
+  // 3. Log the output to verify the JSON structure
+  // We use .getContent() because doPost returns a special ContentService object
+  console.log("Result Payload:");
+  console.log(result.getContent());
 }
 
 function testRegistrationLogic() {

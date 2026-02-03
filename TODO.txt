@@ -47,3 +47,23 @@ member_id | event_name | status | timestamp
 Event table will have the following:
 event_id | event_name |
 Where event id will be in the form e{date}{5 digit random salt} eg e2026011109874
+
+--------------------------------------------------------------------------------------
+02/02/2026
+--------------------------------------------------------------------------------------
+- Change monthly and yearly counts to distinct members (done)
+
+--------------------------------------------------------------------------------------
+02/02/2026
+--------------------------------------------------------------------------------------
+- Add Church database (with church_id | church_name | church_address)
+    - church_id will be assigned by admin as we add churches who opt in to the application (Done)
+
+- Link every user to a church (when registering there should be a church selection dropdown)
+
+- When a user logs in that church_id is propogated throughout the front-end.
+
+- When we add members we add members with a church_id that matches the church_id from the user.
+
+- When we get members to display we filter on where church_id is equal to the church_id of the user.
+
