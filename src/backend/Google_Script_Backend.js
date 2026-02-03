@@ -67,6 +67,10 @@ function doPost(e) {
     if (action === 'getNationalityStats') {
       return getNationalityStats();
     }
+
+    if (action === 'getChurchNames') {
+      return getChurchNames();
+    }
   } catch (error) {
     return sendJSON({ status: "error", message: error.toString() });
   }
@@ -313,18 +317,6 @@ function updateMember(data) {
   if (rowIndex === -1) {
     return sendJSON({ status: "error", message: "Member not found" });
   }
-
-  // 2. Calculate age again if DOB changed
-  // let age = values[rowIndex][headers.indexOf("age")];
-  // if (data.dob) {
-  //   const birthDate = new Date(data.dob);
-  //   const today = new Date();
-  //   age = today.getFullYear() - birthDate.getFullYear();
-  //   const m = today.getMonth() - birthDate.getMonth();
-  //   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-  //     age--;
-  //   }
-  // }
 
   // 3. Build updated row (match column order exactly)
   const updatedRow = [
@@ -814,6 +806,40 @@ function testGetNationalityStats() {
   console.log(result.getContent());
 }
 
+function getChurchNames() {
+  // exact name of your sheet tab
+  const sheet = ss.getSheetByName("Church Detail"); 
+  
+  if (!sheet) {
+    return sendJSON({ status: "error", message: "Sheet 'Church Detail' not found", churches: [] });
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const churches = [];
+
+  // Skip header (i = 1)
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    
+    // Column Mapping based on your list:
+    // 0: church_id, 1: church_name, 2: church_address, 3: church_email_address
+    const id = row[0];
+    const name = row[1];
+
+    if (name) {
+      churches.push({
+        id: id,
+        name: name
+      });
+    }
+  }
+
+  return sendJSON({
+    status: "success",
+    churches: churches
+  });
+}
+
 function testGetAttendanceByTime() {
   // 1. Define test cases
   const testCases = [
@@ -986,6 +1012,21 @@ function testGetEvents(){
   // 2. Call your main function directly
   // const result = doPost(mockEvent);
   doPost(getEveTest);
+}
+
+function testGetChurchNames(){
+
+  const getChurchNameTest = {
+    postData: {
+      contents: JSON.stringify({
+        action: "getChurchNames" 
+      })
+    }
+  };
+
+  // 2. Call your main function directly
+  // const result = doPost(mockEvent);
+  doPost(getChurchNameTest);
 }
 
 function testGetMemberGenderStats() {

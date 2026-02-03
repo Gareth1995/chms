@@ -11,7 +11,7 @@ export const registerUser = async (userData) => {
             firstName: userData.firstName,
             lastName: userData.lastName,
             nationality: userData.nationality,
-            role: userData.role,
+            church_id: userData.church_id,
             email: userData.email,
             cell: String(userData.cell),
             password: userData.password
