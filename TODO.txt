@@ -59,7 +59,7 @@ Where event id will be in the form e{date}{5 digit random salt} eg e202601110987
 - Add Church database (with church_id | church_name | church_address)
     - church_id will be assigned by admin as we add churches who opt in to the application (Done)
 
-- Link every user to a church (when registering there should be a church selection dropdown)
+- Link every user to a church (when registering there should be a church selection dropdown) (done)
 
 - When a user logs in that church_id is propogated throughout the front-end.
 
@@ -67,3 +67,10 @@ Where event id will be in the form e{date}{5 digit random salt} eg e202601110987
 
 - When we get members to display we filter on where church_id is equal to the church_id of the user.
 
+--------------------------------------------------------------------------------------
+NEXT STEPS
+--------------------------------------------------------------------------------------
+
+- Migrate this to a proper backend (do research and form best approach and using best solution)
+- Add basic usage tracking
+- Plan out QR code attendance mechanism

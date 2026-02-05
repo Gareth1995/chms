@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import { addMember } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AddMember = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -15,7 +17,8 @@ const AddMember = () => {
     role: 'Member', // Default
     email: '',
     cell: '',
-    dob: ''
+    dob: '',
+    church_id: user.church_id
   });
 
   const handleChange = (e) => {
