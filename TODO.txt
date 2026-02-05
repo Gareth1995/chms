@@ -61,11 +61,18 @@ Where event id will be in the form e{date}{5 digit random salt} eg e202601110987
 
 - Link every user to a church (when registering there should be a church selection dropdown) (done)
 
-- When a user logs in that church_id is propogated throughout the front-end.
+- When a user logs in that church_id is propogated throughout the front-end. (done)
 
-- When we add members we add members with a church_id that matches the church_id from the user.
+- When we add members we add members with a church_id that matches the church_id from the user. (done)
 
 - When we get members to display we filter on where church_id is equal to the church_id of the user.
+    - View members component must be filtered on church_id (done)
+    - Update members must take into account church_id (and add church change to UI)
+    - Members shown in track attendance must be filtered on church_id
+    - Data used to build line chart must be filtered on church_id
+    - gender distribution plot must be filtered on church_id
+    - nationality distribution plot must be filtered on church_id
+    - age distribution plot must be filtered on church_id
 
 --------------------------------------------------------------------------------------
 NEXT STEPS

@@ -75,12 +75,13 @@ export const addMemberUpdates = async (memberData) => {
   }
 };
 
-export const getMembers = async () => {
+export const getMembers = async (churchId) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getMembers"
+        action: "getMembers",
+        church_id: churchId
       })
     });
     return await response.json();

@@ -118,7 +118,7 @@ function registerUser(data){
     data.firstName,
     data.lastName,
     data.nationality,
-    data.role,
+    data.church_id,
     data.email,
     data.cell,
     hashedPassword
@@ -161,7 +161,7 @@ function loginUser(data) {
         id: userRow[0],
         firstName: userRow[1],
         lastName: userRow[2],
-        role: userRow[4]
+        church_id: userRow[4]
       }
     });
   } else {
@@ -223,7 +223,8 @@ function addMember(data) {
     data.dob,
     age,
     "",
-    timestampISO
+    timestampISO,
+    data.church_id
   ]);
 
   // 6. Append row to the Updates table also
@@ -239,21 +240,36 @@ function addMember(data) {
     data.dob,
     age,
     "",
-    timestampISO
+    timestampISO,
+    data.church_id
   ]);
 
   return sendJSON({ status: "success", memberId: member_id });
 }
 
-function getMembers() {
+function getMembers(requestData) {
   const sheet = ss.getSheetByName("Members");
-  const data = sheet.getDataRange().getValues(); // This gets a 2D array [[Headers], [Row1], [Row2]]
-  
-  // 1. Remove the first row (headers) so we don't treat "First Name" as a person
+  const data = sheet.getDataRange().getValues(); 
+
+  // 1. Remove the first row (headers)
   const headers = data.shift(); 
 
-  // 2. Loop through the remaining rows and format them as objects
-  const members = data.map(row => ({
+  // 2. Find the 'church_id' column index dynamically
+  // This is safer than hardcoding row[X] because the column might move
+  const churchIdIndex = headers.indexOf("church_id");
+
+  // Safety Check: If we can't find the column, return an error
+  if (churchIdIndex === -1) {
+    return sendJSON({ status: "error", message: "Column 'church_id' not found in Members sheet" });
+  }
+
+  // 3. Filter the rows to match the requested church_id
+  const targetId = String(requestData.church_id); // Ensure we compare strings
+  
+  const filteredRows = data.filter(row => String(row[churchIdIndex]) === targetId);
+
+  // 4. Loop through the FILTERED rows and format them
+  const members = filteredRows.map(row => ({
     id: row[0],
     firstName: row[1],
     lastName: row[2],
@@ -262,13 +278,11 @@ function getMembers() {
     role: row[5],
     email: row[6],
     cell: row[7],
-    // Note: row[8] appeared twice in your snippet as gender and DOB. 
-    // I assumed index 8 is DOB and 9 is Age based on standard ordering. Check your sheet columns!
     dob: row[8], 
     age: row[9]
   }));
 
-  // 3. Return the LIST of members
+  // 5. Return the filtered list
   return sendJSON({ status: "success", members: members });
 }
 
@@ -1058,7 +1072,7 @@ function testRegistrationLogic() {
         firstName: "Test",
         lastName: "User",
         nationality: "South African",
-        role: "Admin",
+        church_id: "test01",
         email: "test" + new Date().getTime() + "@example.com", // Random email so it doesn't fail on duplicates
         cell: "1234567890",
         password: "secretpassword123"
@@ -1078,8 +1092,8 @@ function testLoginLogic() {
     postData: {
       contents: JSON.stringify({
         action: "loginUser",
-        email: "gareth.reeve50@gmail.com",
-        password: "password123"
+        email: "trev@gta5.com",
+        password: "123"
       })
     }
   };
@@ -1130,7 +1144,8 @@ function testAddMember() {
         role: "Member",
         email: "member07@gmail.com",
         cell: "079123456",
-        dob: "2025-10-04"  
+        dob: "2025-10-04",
+        church_id: "testID001"  
       })
     }
   };
@@ -1146,7 +1161,8 @@ function testGetMembers() {
   const getMemTest = {
     postData: {
       contents: JSON.stringify({
-        action: "getMembers" 
+        action: "getMembers",
+        church_id: "lans001"
       })
     }
   };

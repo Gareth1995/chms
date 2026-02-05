@@ -10,9 +10,11 @@ import {
   Portal,
   Table,
 } from "@chakra-ui/react"
+import { useAuth } from '../../contexts/AuthContext';
 
 const Members = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [members, setMembers] = useState([]);
   const [selection, setSelection] = useState([]);
@@ -22,7 +24,7 @@ const Members = () => {
     const fetchMembersData = async () => {
       setIsLoading(true);
       try {
-        const response = await getMembers();
+        const response = await getMembers(user.church_id);
         
         if (response.status === "success" && Array.isArray(response.members)) {
             setMembers(response.members);
