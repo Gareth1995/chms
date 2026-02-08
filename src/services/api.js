@@ -186,12 +186,13 @@ export const getAttendance = async (eventName, date, churchId) => {
 /**
  * Gets attendance counts aggregated by day, month and year
  */
-export const getAttendanceStats = async () => {
+export const getAttendanceStats = async (church_id) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getAttendanceByTime" // No arguments needed
+        action: "getAttendanceByTime", // No arguments needed
+        church_id: church_id
       })
     });
     return await response.json();
@@ -201,12 +202,13 @@ export const getAttendanceStats = async () => {
   }
 };
 
-export const getMemberGenderStats = async () => {
+export const getMemberGenderStats = async (church_id) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getMemberGenderStats"
+        action: "getMemberGenderStats",
+        church_id: church_id
       })
     });
     return await response.json();
@@ -216,12 +218,13 @@ export const getMemberGenderStats = async () => {
   }
 };
 
-export const getNationalityStats = async () => {
+export const getNationalityStats = async (church_id) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getNationalityStats"
+        action: "getNationalityStats",
+        church_id: church_id
       })
     });
     return await response.json();
