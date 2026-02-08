@@ -103,19 +103,16 @@ const UpdateMember = () => {
 
             {/* Role Dropdown */}
             <div>
-            <label className="text-xs font-bold text-gray-500 uppercase">Church Role</label>
+            <label className="text-xs font-bold text-gray-500 uppercase">Member Status</label>
             <select 
                 name="role" value={formData.role} onChange={handleChange}
                 className="w-full p-3 border rounded-lg mt-1 bg-white"
             >
-                <option value="Member">Member</option>
-                <option value="Deacon">Deacon</option>
-                <option value="Treasurer">Treasurer</option>
-                <option value="Sabbath School Sup">Sabbath School Sup</option>
-                <option value="Elder">Elder</option>
-                <option value="Church Clerk">Church Clerk</option>
-                <option value="Youth Leader">Youth Leader</option>
-                <option value="Children's Ministries Leader">Children's Ministries Leader</option>
+                <option value="Member">Baptised Member</option>
+                <option value="Regular Visitor">Regular Visitor</option>
+                <option value="Occasional Visitor">Occasional Visitor</option>
+                <option value="Transferred Away">Transferred Away</option>
+                <option value="Off Book">Off Book</option>
             </select>
             </div>
 

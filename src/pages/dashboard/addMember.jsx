@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import { addMember } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AddMember = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -15,7 +17,8 @@ const AddMember = () => {
     role: 'Member', // Default
     email: '',
     cell: '',
-    dob: ''
+    dob: '',
+    church_id: user.church_id
   });
 
   const handleChange = (e) => {
@@ -93,20 +96,14 @@ const AddMember = () => {
 
         {/* Role Dropdown */}
         <div>
-          <label className="text-xs font-bold text-gray-500 uppercase">Church Role</label>
+          <label className="text-xs font-bold text-gray-500 uppercase">Member Status</label>
           <select 
             name="role" value={formData.role} onChange={handleChange}
             className="w-full p-3 border rounded-lg mt-1 bg-white"
           >
-            <option value="Member">Member</option>
-            <option value="Visitor">Visitor</option>
-            <option value="Deacon">Deacon</option>
-            <option value="Treasurer">Treasurer</option>
-            <option value="Sabbath School Sup">Sabbath School Sup</option>
-            <option value="Elder">Elder</option>
-            <option value="Church Clerk">Church Clerk</option>
-            <option value="Youth Leader">Youth Leader</option>
-            <option value="Children's Ministries Leader">Children's Ministries Leader</option>
+            <option value="Member">Baptised Member</option>
+            <option value="Visitor">Regular Visitor</option>
+            <option value="Deacon">Occasional Visitor</option>
           </select>
         </div>
 

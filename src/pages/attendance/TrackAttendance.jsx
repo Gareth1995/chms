@@ -12,10 +12,13 @@ import {
   Dialog,
   Input 
 } from "@chakra-ui/react"
+import { useAuth } from '../../contexts/AuthContext';
 
 const TrackAttendance = () => {
   const navigate = useNavigate();
   const { state } = useLocation(); 
+  const { user } = useAuth();
+
 
   const [members, setMembers] = useState([]);
   const [selection, setSelection] = useState([]);
@@ -41,8 +44,8 @@ const TrackAttendance = () => {
         }
 
         const [membersRes, attendanceRes] = await Promise.all([
-            getMembers(),
-            getAttendance(eventName, eventDate)
+            getMembers(user.church_id),
+            getAttendance(eventName, eventDate, user.church_id)
         ]);
         
         if (membersRes.status === "success" && Array.isArray(membersRes.members)) {
@@ -80,7 +83,8 @@ const TrackAttendance = () => {
                 member_id: memberId,
                 event_name: eventName,
                 status: status,
-                date: eventDate
+                date: eventDate,
+                church_id: user.church_id
             };
         });
 
@@ -126,7 +130,8 @@ const TrackAttendance = () => {
         member_id: "UV",
         event_name: eventName,
         status: count, // The numeric count
-        date: eventDate
+        date: eventDate,
+        church_id: user.church_id
     };
 
     processSave(visitorRecord);
