@@ -67,9 +67,10 @@ Where event id will be in the form e{date}{5 digit random salt} eg e202601110987
 
 - When we get members to display we filter on where church_id is equal to the church_id of the user.
     - View members component must be filtered on church_id (done)
-    - Update members must take into account church_id (and add church change to UI)
-    - Members shown in track attendance must be filtered on church_id
-    - Data used to build line chart must be filtered on church_id
+    - Update members must take into account church_id (and add church change to UI) (done) church ID won't change we will just change member status.
+        When a member goes to a different church also on the system we will be able to see them being added there
+    - Members shown in track attendance must be filtered on church_id (done)
+    - Data used to build line chart must be filtered on church_id 
     - gender distribution plot must be filtered on church_id
     - nationality distribution plot must be filtered on church_id
     - age distribution plot must be filtered on church_id

@@ -165,14 +165,15 @@ export const saveAttendance = async (attendanceRecords) => {
   }
 };
 
-export const getAttendance = async (eventName, date) => {
+export const getAttendance = async (eventName, date, churchId) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
         action: "getAttendance",
         eventName: eventName,
-        date: date
+        date: date,
+        church_id: churchId
       })
     });
     return await response.json();
