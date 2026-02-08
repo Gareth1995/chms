@@ -467,61 +467,151 @@ function deleteEvent(data) {
   return sendJSON({ status: "error", message: "Event not found" });
 }
 
+// function addAttendanceBatch(data) {
+//   let sheet = ss.getSheetByName("Attendance");
+  
+//   if (!sheet) {
+//     sheet = ss.insertSheet("Attendance");
+//     // Header order: Member ID | Event | Status | Date | Timestamp
+//     sheet.appendRow(["member_id", "event_name", "status", "date", "timestamp"]); 
+//   }
+
+//   const records = data.records; 
+//   if (!records || records.length === 0) {
+//     return sendJSON({ status: "success", message: "No records to save" });
+//   }
+
+//   // 1. Generate Timestamp only (Date comes from frontend now)
+//   const now = new Date();
+//   const timestamp = now.toISOString();
+
+//   // 2. READ EXISTING DATA
+//   const lastRow = sheet.getLastRow();
+//   let existingData = [];
+//   let existingMap = new Map();
+
+//   if (lastRow > 1) {
+//     existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+    
+//     existingData.forEach((row, index) => {
+//       // Row: [0]ID, [1]Event, [2]Status, [3]Date, [4]Time
+//       let rowDate = row[3];
+//       if (rowDate instanceof Date) {
+//         rowDate = Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+//       }
+      
+//       // Key includes Date so we can differentiate events on different days
+//       const key = `${row[0]}_${row[1]}_${rowDate}`; 
+//       existingMap.set(key, index); 
+//     });
+//   }
+
+//   // 3. PROCESS RECORDS
+//   const newRows = [];
+//   let updatesMade = false;
+
+//   records.forEach(record => {
+//     // USE DATE FROM FRONTEND
+//     const recordDate = record.date; 
+
+//     const key = `${record.member_id}_${record.event_name}_${recordDate}`;
+
+//     if (existingMap.has(key)) {
+//       // --- UPDATE EXISTING ROW ---
+//       const rowIndex = existingMap.get(key);
+      
+//       existingData[rowIndex][2] = record.status; // Update Status
+//       existingData[rowIndex][4] = timestamp;     // Update 'Last Modified' Time
+      
+//       updatesMade = true;
+//     } else {
+//       // --- CREATE NEW ROW ---
+//       newRows.push([
+//         record.member_id,
+//         record.event_name,
+//         record.status,
+//         recordDate,      // <--- Use Date from UI
+//         timestamp
+//       ]);
+      
+//       existingMap.set(key, existingData.length + newRows.length); 
+//     }
+//   });
+
+//   // 4. WRITE CHANGES
+//   if (updatesMade && existingData.length > 0) {
+//     sheet.getRange(2, 1, existingData.length, 5).setValues(existingData);
+//   }
+
+//   if (newRows.length > 0) {
+//     sheet.getRange(lastRow + 1, 1, newRows.length, 5).setValues(newRows);
+//   }
+
+//   return sendJSON({ 
+//     status: "success", 
+//     message: "Attendance captured", 
+//     new_rows: newRows.length,
+//     updated_rows: updatesMade ? "Yes" : "No"
+//   });
+// }
+
 function addAttendanceBatch(data) {
   let sheet = ss.getSheetByName("Attendance");
   
   if (!sheet) {
     sheet = ss.insertSheet("Attendance");
-    // Header order: Member ID | Event | Status | Date | Timestamp
-    sheet.appendRow(["member_id", "event_name", "status", "date", "timestamp"]); 
+    // Updated Header: Added 'church_id' at the end
+    sheet.appendRow(["member_id", "event_name", "status", "date", "timestamp", "church_id"]); 
   }
 
-  const records = data.records; 
+  const records = data.records; // Frontend sends { action: "...", records: [...] }
   if (!records || records.length === 0) {
     return sendJSON({ status: "success", message: "No records to save" });
   }
 
-  // 1. Generate Timestamp only (Date comes from frontend now)
   const now = new Date();
   const timestamp = now.toISOString();
 
-  // 2. READ EXISTING DATA
+  // 1. READ EXISTING DATA (Now reading 6 columns instead of 5)
   const lastRow = sheet.getLastRow();
   let existingData = [];
   let existingMap = new Map();
 
   if (lastRow > 1) {
-    existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+    // Change: Fetch 6 columns to include church_id
+    existingData = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
     
     existingData.forEach((row, index) => {
-      // Row: [0]ID, [1]Event, [2]Status, [3]Date, [4]Time
+      // Row: [0]ID, [1]Event, [2]Status, [3]Date, [4]Time, [5]ChurchID
       let rowDate = row[3];
       if (rowDate instanceof Date) {
         rowDate = Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
       }
       
-      // Key includes Date so we can differentiate events on different days
-      const key = `${row[0]}_${row[1]}_${rowDate}`; 
+      // CRITICAL CHANGE: Include Church ID in the unique key
+      // This ensures we match the correct church's record
+      const key = `${row[0]}_${row[1]}_${rowDate}_${row[5]}`; 
       existingMap.set(key, index); 
     });
   }
 
-  // 3. PROCESS RECORDS
+  // 2. PROCESS RECORDS
   const newRows = [];
   let updatesMade = false;
 
   records.forEach(record => {
-    // USE DATE FROM FRONTEND
     const recordDate = record.date; 
-
-    const key = `${record.member_id}_${record.event_name}_${recordDate}`;
+    
+    // Generate key with church_id
+    const key = `${record.member_id}_${record.event_name}_${recordDate}_${record.church_id}`;
 
     if (existingMap.has(key)) {
       // --- UPDATE EXISTING ROW ---
       const rowIndex = existingMap.get(key);
       
       existingData[rowIndex][2] = record.status; // Update Status
-      existingData[rowIndex][4] = timestamp;     // Update 'Last Modified' Time
+      existingData[rowIndex][4] = timestamp;     // Update Time
+      // No need to update church_id, it's part of the key
       
       updatesMade = true;
     } else {
@@ -530,21 +620,25 @@ function addAttendanceBatch(data) {
         record.member_id,
         record.event_name,
         record.status,
-        recordDate,      // <--- Use Date from UI
-        timestamp
+        recordDate,
+        timestamp,
+        record.church_id // <--- Add Church ID to new row
       ]);
-      
-      existingMap.set(key, existingData.length + newRows.length); 
     }
   });
 
-  // 4. WRITE CHANGES
+  // 3. WRITE CHANGES
+  // Change: Write back 6 columns for updates
   if (updatesMade && existingData.length > 0) {
-    sheet.getRange(2, 1, existingData.length, 5).setValues(existingData);
+    sheet.getRange(2, 1, existingData.length, 6).setValues(existingData);
   }
 
+  // Change: Write 6 columns for new rows
   if (newRows.length > 0) {
-    sheet.getRange(lastRow + 1, 1, newRows.length, 5).setValues(newRows);
+    // Note: If the sheet was empty, we start at lastRow + 1
+    // If we just created the sheet, lastRow is 1 (header).
+    const startRow = lastRow === 0 ? 1 : lastRow + 1; 
+    sheet.getRange(startRow, 1, newRows.length, 6).setValues(newRows);
   }
 
   return sendJSON({ 
@@ -555,32 +649,101 @@ function addAttendanceBatch(data) {
   });
 }
 
+// function getAttendance(data) {
+//   const sheet = ss.getSheetByName("Attendance");
+//   if (!sheet) return sendJSON({ status: "success", records: [] });
+
+//   const rows = sheet.getDataRange().getValues();
+  
+//   // 1. Get Headers and find the 'church_id' column index dynamically
+//   // This prevents breaking if you change column order
+//   const headers = rows[0]; 
+//   const churchIdIndex = headers.indexOf("church_id");
+
+//   // Safety: If column missing, return empty or error (optional)
+//   if (churchIdIndex === -1) {
+//      return sendJSON({ status: "error", message: "'church_id' column missing in Attendance sheet" });
+//   }
+
+//   // const rows = sheet.getDataRange().getValues();
+//   const targetEvent = data.eventName;
+//   const targetDate = data.date; // Expecting "YYYY-MM-DD"
+//   const targetChurchId = String(data.church_id);
+  
+//   const foundRecords = [];
+
+//   // Skip header (i=1)
+//   for (let i = 1; i < rows.length; i++) {
+//     const row = rows[i];
+//     // Col 1: Event Name, Col 2: Status, Col 3: Date (Indices based on your last structure)
+//     // Your structure: [member_id, event_name, status, date, timestamp]
+    
+//     const eventName = row[1];
+//     const status = row[2];
+//     let dateVal = row[3];
+
+//     const rowChurchId = String(row[churchIdIndex]);
+
+//     // Format date from sheet to string for comparison
+//     if (dateVal instanceof Date) {
+//       dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
+//     }
+
+//     if (eventName === targetEvent && dateVal === targetDate && status == 1 && rowChurchId === targetChurchId)
+//       foundRecords.push(row[0]); // Push member_id
+//     }
+//   }
+
+//   return sendJSON({ status: "success", presentMemberIds: foundRecords });
+// }
+
 function getAttendance(data) {
   const sheet = ss.getSheetByName("Attendance");
   if (!sheet) return sendJSON({ status: "success", records: [] });
 
   const rows = sheet.getDataRange().getValues();
+  
+  // 1. Get Headers and find the 'church_id' column index dynamically
+  // This prevents breaking if you change column order
+  const headers = rows[0]; 
+  const churchIdIndex = headers.indexOf("church_id");
+
+  // Safety: If column missing, return empty or error (optional)
+  if (churchIdIndex === -1) {
+     return sendJSON({ status: "error", message: "'church_id' column missing in Attendance sheet" });
+  }
+
   const targetEvent = data.eventName;
   const targetDate = data.date; // Expecting "YYYY-MM-DD"
-  
+  const targetChurchId = String(data.church_id); // Ensure string comparison
+
   const foundRecords = [];
 
   // Skip header (i=1)
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    // Col 1: Event Name, Col 2: Status, Col 3: Date (Indices based on your last structure)
-    // Your structure: [member_id, event_name, status, date, timestamp]
-    
+
+    // Get values based on assumed indices for Event/Status/Date
+    // (Ideally, find these dynamically too, but stick to your current indices if fixed)
     const eventName = row[1];
     const status = row[2];
     let dateVal = row[3];
+    
+    // Get the stored Church ID from the found column
+    const rowChurchId = String(row[churchIdIndex]);
 
     // Format date from sheet to string for comparison
     if (dateVal instanceof Date) {
       dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
     }
 
-    if (eventName === targetEvent && dateVal === targetDate && status == 1) {
+    // 2. Add the Church ID check to the if-statement
+    if (
+        eventName === targetEvent && 
+        dateVal === targetDate && 
+        status == 1 &&
+        rowChurchId === targetChurchId // <--- NEW CHECK
+    ) {
       foundRecords.push(row[0]); // Push member_id
     }
   }
@@ -882,50 +1045,115 @@ function testGetAttendanceByTime() {
 }
 
 // testing functions
+// function testAddAttendanceBatch() {
+//   console.log("--- 🧪 STARTING TEST: addAttendanceBatch ---");
+
+//   // --- STEP 1: CONFIGURE TEST DATA ---
+//   // Change this value from 1 to 0 and run the script again to test the UPDATE logic.
+//   const TEST_STATUS_1 = 0; 
+//   const TEST_STATUS_2 = 1; 
+
+//   const mockData = {
+//     action: "addAttendance",
+//     records: [
+//       { 
+//         // This record will switch status based on the variable above
+//         member_id: "TEST_USER_001", 
+//         event_name: "Test Event Alpha", 
+//         status: TEST_STATUS_1,
+//         date: "2026-03-16",
+//         church_id: "lans001" 
+//       },
+//       { 
+//         // This record stays the same
+//         member_id: "TEST_USER_002", 
+//         event_name: "Test Event Alpha", 
+//         status: TEST_STATUS_2,
+//         date: "2026-03-16",
+//         church_id: "test001"  
+//       }
+//     ]
+//   };
+
+//   console.log("Incoming Payload:", JSON.stringify(mockData));
+
+//   // --- STEP 2: EXECUTE FUNCTION ---
+//   try {
+//     const response = addAttendanceBatch(mockData);
+    
+//     // Parse the JSON response to read it in the logs
+//     const result = JSON.parse(response.getContent());
+
+//     // --- STEP 3: ANALYZE RESULTS ---
+//     console.log("--------------------------------");
+//     console.log("✅ API Response Received");
+//     console.log("Status:", result.status);
+//     console.log("Message:", result.message);
+//     console.log("New Rows Created:", result.new_rows);
+//     console.log("Existing Rows Updated:", result.updated_rows);
+//     console.log("--------------------------------");
+
+//   } catch (error) {
+//     console.error("❌ ERROR FAILED:", error.toString());
+//   }
+// }
+
 function testAddAttendanceBatch() {
   console.log("--- 🧪 STARTING TEST: addAttendanceBatch ---");
 
   // --- STEP 1: CONFIGURE TEST DATA ---
-  // Change this value from 1 to 0 and run the script again to test the UPDATE logic.
   const TEST_STATUS_1 = 0; 
-  const TEST_STATUS_2 = 1; 
+  const TEST_STATUS_2 = 0; 
 
   const mockData = {
     action: "addAttendance",
     records: [
       { 
-        // This record will switch status based on the variable above
         member_id: "TEST_USER_001", 
         event_name: "Test Event Alpha", 
         status: TEST_STATUS_1,
-        date: "2026-01-16" 
+        date: "2026-03-16",
+        church_id: "lans001" 
       },
       { 
-        // This record stays the same
         member_id: "TEST_USER_002", 
         event_name: "Test Event Alpha", 
         status: TEST_STATUS_2,
-        date: "2026-01-16"  
+        date: "2026-03-16",
+        church_id: "test001" 
+      },
+      {
+        member_id: "UV", 
+        event_name: "Test Event Alpha",
+        status: 5, 
+        date: "2026-03-16",
+        church_id: "lans001"
       }
     ]
   };
 
-  console.log("Incoming Payload:", JSON.stringify(mockData));
+  console.log("Incoming Payload (Full Object):", JSON.stringify(mockData));
 
   // --- STEP 2: EXECUTE FUNCTION ---
   try {
+    // ✅ CRITICAL FIX: Pass 'mockData' (The whole object).
+    // Your main function now runs 'const records = data.records', 
+    // so it needs the object wrapper to work.
     const response = addAttendanceBatch(mockData);
     
-    // Parse the JSON response to read it in the logs
+    // Parse the JSON response
     const result = JSON.parse(response.getContent());
 
     // --- STEP 3: ANALYZE RESULTS ---
     console.log("--------------------------------");
     console.log("✅ API Response Received");
     console.log("Status:", result.status);
-    console.log("Message:", result.message);
-    console.log("New Rows Created:", result.new_rows);
-    console.log("Existing Rows Updated:", result.updated_rows);
+    
+    if (result.status === 'success') {
+       console.log("Rows Saved:", result.count);
+    } else {
+       console.log("Message:", result.message);
+    }
     console.log("--------------------------------");
 
   } catch (error) {
@@ -938,16 +1166,17 @@ function testGetAttendance() {
 
   // --- CONFIGURATION ---
   // Ensure this matches the data you previously added to the sheet
-  const TEST_EVENT = "Test Event Alpha"; 
+  const TEST_EVENT = "Divine Service"; 
   
   // Format must match strictly: YYYY-MM-DD
   // Use the date from your 'Attendance' column D
-  const TEST_DATE = "2026-01-18"; 
+  const TEST_DATE = "2026-01-31"; 
 
   const mockPayload = {
     action: "getAttendance",
     eventName: TEST_EVENT,
-    date: TEST_DATE
+    date: TEST_DATE,
+    church_id: "test001"
   };
 
   console.log(`Requesting: ${TEST_EVENT} on ${TEST_DATE}`);
