@@ -44,10 +44,14 @@ const Dashboard = () => {
         // Fetch Events List AND All Stats in parallel
         const [eventsRes, statsRes, genderRes, natRes] = await Promise.all([
           getEvents(),
-          getAttendanceStats(),
-          getMemberGenderStats(),
-          getNationalityStats()
+          getAttendanceStats(user.church_id),
+          getMemberGenderStats(user.church_id),
+          getNationalityStats(user.church_id)
         ]);
+
+        console.log(statsRes)
+        console.log(genderRes)
+        console.log(natRes)
 
         // A. Handle Events List
         if (eventsRes?.events && Array.isArray(eventsRes.events)) {
@@ -71,6 +75,7 @@ const Dashboard = () => {
           }));
           
           setGenderData(coloredData);
+          console.log(genderData);
         }
 
         // D. Handle Nationality Stats
@@ -81,6 +86,7 @@ const Dashboard = () => {
              fill: NATIONALITY_COLORS[index % NATIONALITY_COLORS.length]
            }));
            setNationalityData(coloredNatData);
+           console.log(nationalityData);
         }
 
       } catch (error) {

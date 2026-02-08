@@ -11,7 +11,7 @@ export const registerUser = async (userData) => {
             firstName: userData.firstName,
             lastName: userData.lastName,
             nationality: userData.nationality,
-            role: userData.role,
+            church_id: userData.church_id,
             email: userData.email,
             cell: String(userData.cell),
             password: userData.password
@@ -75,12 +75,13 @@ export const addMemberUpdates = async (memberData) => {
   }
 };
 
-export const getMembers = async () => {
+export const getMembers = async (churchId) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getMembers"
+        action: "getMembers",
+        church_id: churchId
       })
     });
     return await response.json();
@@ -164,14 +165,15 @@ export const saveAttendance = async (attendanceRecords) => {
   }
 };
 
-export const getAttendance = async (eventName, date) => {
+export const getAttendance = async (eventName, date, churchId) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
         action: "getAttendance",
         eventName: eventName,
-        date: date
+        date: date,
+        church_id: churchId
       })
     });
     return await response.json();
@@ -184,12 +186,13 @@ export const getAttendance = async (eventName, date) => {
 /**
  * Gets attendance counts aggregated by day, month and year
  */
-export const getAttendanceStats = async () => {
+export const getAttendanceStats = async (church_id) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getAttendanceByTime" // No arguments needed
+        action: "getAttendanceByTime", // No arguments needed
+        church_id: church_id
       })
     });
     return await response.json();
@@ -199,12 +202,13 @@ export const getAttendanceStats = async () => {
   }
 };
 
-export const getMemberGenderStats = async () => {
+export const getMemberGenderStats = async (church_id) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getMemberGenderStats"
+        action: "getMemberGenderStats",
+        church_id: church_id
       })
     });
     return await response.json();
@@ -214,12 +218,13 @@ export const getMemberGenderStats = async () => {
   }
 };
 
-export const getNationalityStats = async () => {
+export const getNationalityStats = async (church_id) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "getNationalityStats"
+        action: "getNationalityStats",
+        church_id: church_id
       })
     });
     return await response.json();

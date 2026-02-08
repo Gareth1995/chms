@@ -18,7 +18,7 @@ const Signup = () => {
         firstName: '',
         lastName: '',
         nationality: '',
-        role:'',
+        church_id:'',
         cell: '',
         email: '',
         password: ''
@@ -47,6 +47,7 @@ const Signup = () => {
     const handleChange = (e) => {
         // console.log({[e.target.name] : e.value});
         setFormData({...formData, [e.target.name]: e.target.value})
+        // console.log(formData)
     }
 
     const handleSignup = async (e) => {
