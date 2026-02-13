@@ -71,11 +71,6 @@ const Members = () => {
                   ? [...prev, memberId]
                   : selection.filter((id) => id !== memberId),
               )
-
-              // console.log("Row toggled:", {
-              //   checked: changes.checked,
-              //   member,
-              // });
             }}
           >
             <Checkbox.HiddenInput />
@@ -86,11 +81,11 @@ const Members = () => {
             />
           </Checkbox.Root>
         </Table.Cell>
-        {/* Updated Columns: First Name, Last Name, Role, Cell */}
-        <Table.Cell fontWeight="medium">{member.firstName}</Table.Cell>
-        <Table.Cell fontWeight="medium">{member.lastName}</Table.Cell>
+        {/* Updated Columns: First + surnamen, Role, Cell, email */}
+        <Table.Cell fontWeight="medium">{`${member.firstName} ${member.lastName}`}</Table.Cell>
         <Table.Cell>{member.role}</Table.Cell>
         <Table.Cell>{member.cell}</Table.Cell>
+        <Table.Cell>{member.email}</Table.Cell>
       </Table.Row>
     );
   });
@@ -124,10 +119,10 @@ const Members = () => {
               </Checkbox.Root>
             </Table.ColumnHeader>
             {/* Updated Headers */}
-            <Table.ColumnHeader>First Name</Table.ColumnHeader>
-            <Table.ColumnHeader>Last Name</Table.ColumnHeader>
-            <Table.ColumnHeader>Role</Table.ColumnHeader>
+            <Table.ColumnHeader>Name Surname</Table.ColumnHeader>
+            <Table.ColumnHeader>Status</Table.ColumnHeader>
             <Table.ColumnHeader>Cell</Table.ColumnHeader>
+            <Table.ColumnHeader>Email</Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
         

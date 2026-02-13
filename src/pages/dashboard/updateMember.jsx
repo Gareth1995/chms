@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Card from '../../components/ui/Card';
 import { addMemberUpdates } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const UpdateMember = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
 
     const selectedMembers = state?.selectedMembers || [];
     console.log(selectedMembers);
@@ -29,7 +31,8 @@ const UpdateMember = () => {
         cell: selectedMembers[0].cell,
         dob: formatDateForInput(selectedMembers[0].dob),
         age: selectedMembers[0].age,
-        updateReason: ""
+        updateReason: "",
+        church_id: user.church_id
     });
     
     console.log(formData);
