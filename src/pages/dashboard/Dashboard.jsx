@@ -167,6 +167,7 @@ const Dashboard = () => {
   return (
     <Card 
       title="Churchlytics Dashboard"
+      subTitle={`Hello, ${user.firstName} ${user.lastName} (${user.church_id})`}
       actionComponent={<SettingsMenu onLogout={handleLogout}/>}
       className="bg-gray-50" 
     >
