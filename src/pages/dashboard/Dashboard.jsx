@@ -9,7 +9,7 @@ import {
 import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsMenu from '../../components/ui/SettingsMenu';
-import { getEvents, getAttendanceStats, getMemberGenderStats, getNationalityStats } from '../../services/api';
+import { getEvents, getAttendanceStats, getMemberGenderStats, getNationalityStats, getAgeStats, getRoleStats } from '../../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -30,6 +30,9 @@ const Dashboard = () => {
   const GENDER_COLORS = ['#6366f1', '#f43f5e']; 
 
   const [nationalityData, setNationalityData] = useState([]);
+
+  const [ageData, setAgeData] = useState([]);
+  const [roleData, setRoleData] = useState([]);
   
   // Keep colors static
   const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
@@ -42,16 +45,20 @@ const Dashboard = () => {
       setLoading(true);
       try {
         // Fetch Events List AND All Stats in parallel
-        const [eventsRes, statsRes, genderRes, natRes] = await Promise.all([
+        const [eventsRes, statsRes, genderRes, natRes, ageRes, roleRes] = await Promise.all([
           getEvents(),
           getAttendanceStats(user.church_id),
           getMemberGenderStats(user.church_id),
-          getNationalityStats(user.church_id)
+          getNationalityStats(user.church_id),
+          getAgeStats(user.church_id),
+          getRoleStats(user.church_id)
         ]);
 
         console.log(statsRes)
         console.log(genderRes)
         console.log(natRes)
+        console.log(ageRes)
+        console.log(roleRes)
 
         // A. Handle Events List
         if (eventsRes?.events && Array.isArray(eventsRes.events)) {
@@ -75,7 +82,6 @@ const Dashboard = () => {
           }));
           
           setGenderData(coloredData);
-          console.log(genderData);
         }
 
         // D. Handle Nationality Stats
@@ -87,6 +93,19 @@ const Dashboard = () => {
            }));
            setNationalityData(coloredNatData);
            console.log(nationalityData);
+        }
+
+        // E. Handle Age Stats
+        if (ageRes?.status === 'success' && ageRes.ageData) {
+          // Simply set the state with the returned array
+          setAgeData(ageRes.ageData);
+          console.log("Age Data loaded:", ageRes.ageData);
+        }
+
+        // F. Handle Role Stats
+        if (roleRes?.status === 'success' && roleRes.roleData) {
+          setRoleData(roleRes.roleData);
+          console.log("Role Data loaded:", roleRes.roleData);
         }
 
       } catch (error) {
@@ -130,25 +149,10 @@ const Dashboard = () => {
     }
   };
 
-  // --- OTHER STATIC DATA ---
-  // const genderData = [ { name: 'Male', value: 45 }, { name: 'Female', value: 55 } ];
-  
-
-  // const nationalityData = [
-  //   { name: 'American', value: 30 }, { name: 'British', value: 20 },
-  //   { name: 'Canadian', value: 15 }, { name: 'Nigerian', value: 10 }, { name: 'Other', value: 25 },
+  // const roleData = [
+  //   { role: 'Member', count: 150 }, { role: 'Visitor', count: 30 },
+  //   { role: 'Leader', count: 15 }, { role: 'Volunteer', count: 25 },
   // ];
-  // const NATIONALITY_COLORS = ['#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
-
-  const ageData = [
-    { range: '0-18', count: 20 }, { range: '19-30', count: 45 },
-    { range: '31-50', count: 60 }, { range: '51-70', count: 35 }, { range: '70+', count: 15 },
-  ];
-
-  const roleData = [
-    { role: 'Member', count: 150 }, { role: 'Visitor', count: 30 },
-    { role: 'Leader', count: 15 }, { role: 'Volunteer', count: 25 },
-  ];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -362,7 +366,7 @@ const Dashboard = () => {
 
         {/* --- ROW 4: Role Count --- */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-           <h3 className="font-bold text-gray-800 mb-6">Member Roles</h3>
+           <h3 className="font-bold text-gray-800 mb-6">Member Status</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={roleData} layout="vertical"> 

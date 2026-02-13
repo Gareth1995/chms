@@ -249,3 +249,36 @@ export const getChurchNames = async () => {
         return { status: "error", churches: [] };
     }
 };
+
+export const getAgeStats = async (church_id) => {
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getAgeStats",
+                church_id: church_id
+            })
+        });
+        return await response.json(); 
+    } catch (error) {
+        console.error("Failed to fetch age stats:", error);
+        return { status: "error", ageData: [] };
+    }
+};
+
+export const getRoleStats = async (church_id) => {
+    try {
+        // NOTE: Ensure this URL matches what you are using for the other working endpoints
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getRoleStats",
+                church_id: church_id
+            })
+        });
+        return await response.json(); 
+    } catch (error) {
+        console.error("Failed to fetch role stats:", error);
+        return { status: "error", roleData: [] };
+    }
+};

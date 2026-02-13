@@ -111,9 +111,10 @@ const UpdateMember = () => {
                 name="role" value={formData.role} onChange={handleChange}
                 className="w-full p-3 border rounded-lg mt-1 bg-white"
             >
-                <option value="Baptised Member">Baptised Member</option>
+                <option value="Baptized Member">Baptized Member</option>
                 <option value="Regular Visitor">Regular Visitor</option>
                 <option value="Occasional Visitor">Occasional Visitor</option>
+                <option value="Child">Child</option>
                 <option value="Transferred Away">Transferred Away</option>
                 <option value="Off Book">Off Book</option>
             </select>
