@@ -14,7 +14,7 @@ const AddMember = () => {
     lastName: '',
     nationality: '',
     gender: 'Male', // Default
-    role: 'Member', // Default
+    role: 'Baptized Member', // Default
     email: '',
     cell: '',
     dob: '',
@@ -38,7 +38,7 @@ const AddMember = () => {
       // Option A: Clear form to add another
       setFormData({
         firstName: '', lastName: '', nationality: '', gender: 'Male', 
-        role: 'Member', email: '', cell: '', dob: ''
+        role: 'Member', email: '', cell: '', dob: '', church_id: user.church_id
       });
       // Option B: Go back to dashboard (Uncomment next line if preferred)
       // navigate('/dashboard');

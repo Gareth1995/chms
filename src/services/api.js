@@ -27,19 +27,34 @@ export const registerUser = async (userData) => {
 export const loginUser = async (email, password) => {
     console.log(email, password);
 
+    // try {
+    //     const response = await fetch(GOOGLE_SCRIPT_URL, {
+    //     method: "POST",
+    //     body: JSON.stringify({
+    //         action: "loginUser",
+    //         email: email,
+    //         password: password
+    //         })
+    //     });
+    //     return await response.json();
+    // } catch (error) {
+    //     console.error("Login failed:", error);
+    //     return { status: "error", message: "Network error" };
+    // }
+
     try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-            action: "loginUser",
-            email: email,
-            password: password
+        // Use the smart retry helper here!
+        return await fetchWithRetry(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "loginUser",
+                email: email,
+                password: password
             })
         });
-        return await response.json();
     } catch (error) {
-        console.error("Login failed:", error);
-        return { status: "error", message: "Network error" };
+        console.error("Login failed after retries:", error);
+        return { status: "error", message: "Connection unstable. Please try again." };
     }
 };
 
@@ -281,4 +296,26 @@ export const getRoleStats = async (church_id) => {
         console.error("Failed to fetch role stats:", error);
         return { status: "error", roleData: [] };
     }
+};
+
+// HELPER: Auto-retry fetch requests
+// If a request fails, it waits 1 second and tries again (max 3 times)
+async function fetchWithRetry(url, options, retries = 2) {
+  try {
+    const response = await fetch(url, options);
+    
+    // If response is not OK (e.g. 404, 500), throw error to trigger retry
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    
+    return await response.json();
+  } catch (err) {
+    if (retries > 0) {
+      console.warn(`Request failed. Retrying... (${retries} attempts left)`);
+      // Wait 1 second before retrying to let the server "cool down"
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    // If no retries left, throw the final error
+    throw err;
+  }
 };
