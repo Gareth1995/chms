@@ -150,7 +150,7 @@ const UpdateMember = () => {
             <div>
             <label className="text-xs font-bold text-gray-500 uppercase">Update Reason</label>
             <textarea 
-                name="updateReason" required value={formData.updateReason} onChange={handleChange}
+                name="updateReason" value={formData.updateReason} onChange={handleChange}
                 className="w-full p-3 border rounded-lg mt-1" placeholder="What did you update?"
             />
             </div>
