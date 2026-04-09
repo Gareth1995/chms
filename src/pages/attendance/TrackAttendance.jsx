@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; 
 import { getMembers, saveAttendance, getAttendance } from "../../services/api"; 
 import Card from '../../components/ui/Card';
@@ -19,7 +19,6 @@ const TrackAttendance = () => {
   const { state } = useLocation(); 
   const { user } = useAuth();
 
-
   const [members, setMembers] = useState([]);
   const [selection, setSelection] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +28,14 @@ const TrackAttendance = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogStep, setDialogStep] = useState(1); // 1 = Ask, 2 = Input
   const [visitorCount, setVisitorCount] = useState("");
+
+  // --- AI Feature States & Refs ---
+  const [showAI, setShowAI] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [aiPersonCount, setAiPersonCount] = useState(0); 
+  const imageRef = useRef(null);
+  const canvasRef = useRef(null);
 
   // Safety check for state
   const eventName = state?.eventName || "";
@@ -65,6 +72,142 @@ const TrackAttendance = () => {
 
     loadData();
   }, [eventName, eventDate]); 
+
+  // --- AI IMAGE CAPTURE HANDLER (Microservice Approach) ---
+  const handleImageCapture = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 1. Clear any previous boxes from the canvas immediately
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    const imageUrl = URL.createObjectURL(file);
+    setImageSrc(imageUrl); // React now schedules a rerender to show the <img> tag
+    setIsAnalyzing(true);
+    setAiPersonCount(0); 
+
+    try {
+      // 2. THE FIX: YIELD TO REACT 
+      // We pause for 100 milliseconds. This gives React just enough time 
+      // to render the conditional <img> tag into the DOM so that the 
+      // reference ('imageRef.current') is no longer null.
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const imgElement = imageRef.current;
+      
+      // 3. Safety Check: If it's still null (unlikely), stop here gracefully.
+      if (!imgElement) {
+          console.error("Image element not found in DOM yet.");
+          setIsAnalyzing(false);
+          return;
+      }
+
+      // 4. Proceed with processing without needing 'onload'
+      const TARGET_SIZE = 1200;
+      let downscaleRatio = 1;
+      
+      // We use naturalWidth/naturalHeight from the loaded image data
+      if (imgElement.naturalWidth > TARGET_SIZE) {
+        downscaleRatio = TARGET_SIZE / imgElement.naturalWidth;
+      }
+
+      const offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = imgElement.naturalWidth * downscaleRatio;
+      offscreenCanvas.height = imgElement.naturalHeight * downscaleRatio;
+      const ctx = offscreenCanvas.getContext('2d', { alpha: false });
+      ctx.drawImage(imgElement, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+      // 5. CONVERT TO BLOB AND SEND TO PYTHON BACKEND
+      offscreenCanvas.toBlob(async (blob) => {
+          try {
+              const formData = new FormData();
+              formData.append('file', blob, 'congregation.jpg');
+
+              // Ensure this is your correct .hf.space URL!
+              const HF_API_URL = "https://brownenergy-congregant-detection.hf.space/detect";
+
+              const response = await fetch(HF_API_URL, {
+                  method: 'POST',
+                  body: formData,
+              });
+
+              if (!response.ok) throw new Error("API responded with an error");
+
+              const data = await response.json();
+
+              // 6. UPDATE UI WITH RESULTS
+              setAiPersonCount(data.count);
+              drawBoundingBoxes(data.predictions, downscaleRatio);
+
+          } catch (apiError) {
+              console.error("Microservice Error:", apiError);
+              alert("Failed to reach the AI server.");
+          } finally {
+              setIsAnalyzing(false);
+          }
+      }, 'image/jpeg', 0.8); 
+      
+    } catch (error) {
+      console.error("Capture Error:", error);
+      setIsAnalyzing(false);
+    }
+  };
+
+  // --- AI BOUNDING BOX DRAWING ---
+  const drawBoundingBoxes = (predictions, downscaleRatio = 1) => {
+    const canvas = canvasRef.current;
+    const img = imageRef.current;
+    if (!canvas || !img || !predictions) return;
+
+    canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const aiImageWidth = img.naturalWidth * downscaleRatio;
+    const aiImageHeight = img.naturalHeight * downscaleRatio;
+
+    const scaleX = img.clientWidth / aiImageWidth;
+    const scaleY = img.clientHeight / aiImageHeight;
+
+    predictions.forEach((prediction) => {
+      // Data format from our Python API: [x1, y1, width, height]
+      const [x, y, width, height] = prediction.bbox;
+
+      const scaledX = x * scaleX;
+      const scaledY = y * scaleY;
+      const scaledWidth = width * scaleX;
+      const scaledHeight = height * scaleY;
+
+      ctx.strokeStyle = '#22c55e'; 
+      ctx.lineWidth = 3;
+      ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(scaledX, scaledY - 20, 45, 20); 
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Arial';
+      ctx.fillText(
+        `${Math.round(prediction.score * 100)}%`, 
+        scaledX + 5, 
+        scaledY - 5
+      );
+    });
+  };
+
+  // --- HELPER: Use AI count for visitors ---
+  const handleUseAiForVisitors = () => {
+    const estimatedVisitors = Math.max(0, aiPersonCount - selection.length);
+    setVisitorCount(estimatedVisitors.toString());
+    setDialogStep(2);
+    setIsDialogOpen(true);
+  };
 
   // This handles both scenarios: with or without the extra visitor record
   const processSave = async (extraRecord = null) => {
@@ -118,18 +261,16 @@ const TrackAttendance = () => {
 
   // --- HANDLER: User clicks "Save" (Step 2) ---
   const handleSaveWithVisitors = () => {
-    // Validate input
     const count = parseInt(visitorCount);
     if (isNaN(count) || count < 0) {
         alert("Please enter a valid number of visitors.");
         return;
     }
 
-    // Create the visitor record
     const visitorRecord = {
         member_id: "UV",
         event_name: eventName,
-        status: count, // The numeric count
+        status: count, 
         date: eventDate,
         church_id: user.church_id
     };
@@ -143,7 +284,6 @@ const TrackAttendance = () => {
         e.preventDefault();
         e.stopPropagation();
     }
-    // Reset dialog state
     setDialogStep(1); 
     setVisitorCount(""); 
     setIsDialogOpen(true);
@@ -206,6 +346,79 @@ const TrackAttendance = () => {
           subTitle={eventDate}
           backAction={() => navigate('/attendance/EventSelect')}
       >
+        
+        {/* --- AI CAMERA SECTION --- */}
+        <div className="mb-6 px-4">
+          <Button 
+            onClick={() => setShowAI(!showAI)} 
+            variant="outline" 
+            size="sm" 
+            width="full"
+            borderColor="indigo.500"
+            color="indigo.600"
+            _hover={{ bg: "indigo.50" }}
+          >
+            {showAI ? "Hide AI Camera" : "📸 Use AI Camera to Count"}
+          </Button>
+
+          {showAI && (
+            <div className="mt-4 flex flex-col gap-4 border border-gray-100 p-4 rounded-xl bg-gray-50">
+              <label className="bg-indigo-600 text-white p-3 rounded-lg font-bold text-center cursor-pointer hover:bg-indigo-700 transition shadow-sm text-sm">
+                {isAnalyzing ? "Uploading to Cloud..." : "Take Photo"}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment" 
+                  onChange={handleImageCapture} 
+                  className="hidden" 
+                  disabled={isAnalyzing}
+                />
+              </label>
+
+              {imageSrc && (
+                <div className="border rounded-lg overflow-hidden shadow-sm relative bg-white">
+                  <img 
+                    ref={imageRef}
+                    src={imageSrc} 
+                    alt="Congregation" 
+                    className="w-full h-auto block"
+                    crossOrigin="anonymous" 
+                  />
+                  
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                  />
+
+                  {isAnalyzing && (
+                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center backdrop-blur-sm">
+                      <div className="bg-white p-2 px-4 rounded-lg shadow-lg font-bold text-indigo-800 text-sm animate-pulse flex items-center gap-2">
+                        <Spinner size="sm" /> Analyzing...
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isAnalyzing && imageSrc && (
+                  <div className="flex flex-col gap-3">
+                      <div className="bg-green-50 border border-green-200 text-green-800 p-3 rounded-lg text-center">
+                          <p className="text-xs uppercase font-bold text-green-600">Total Counted</p>
+                          <p className="text-3xl font-black">{aiPersonCount}</p>
+                      </div>
+                      <Button 
+                          onClick={handleUseAiForVisitors}
+                          bg="green.500" color="white" _hover={{ bg: "green.600" }} size="sm"
+                      >
+                          Set as Unknown Visitors Count
+                      </Button>
+                  </div>
+              )}
+            </div>
+          )}
+        </div>
+        {/* --- END AI CAMERA SECTION --- */}
+
         <Table.Root size="sm" interactive>
           <Table.Header>
             <Table.Row>
@@ -273,7 +486,6 @@ const TrackAttendance = () => {
                   disabled={isSubmitting}
                   onClick={handleCaptureClick}
                 >
-                  {/* 3. Conditional Rendering: Spinner vs Text */}
                   {isSubmitting ? (
                       <Spinner size="sm" color="white" /> 
                   ) : (
@@ -304,10 +516,8 @@ const TrackAttendance = () => {
             
             <Dialog.Body py={4}>
               {dialogStep === 1 ? (
-                 // STEP 1 CONTENT
                  "Do you want to add a count of unknown visitors?"
               ) : (
-                 // STEP 2 CONTENT
                  <div className="flex flex-col gap-2">
                     <p className="mb-2">How many unknown visitors attending today?</p>
                     <Input 
@@ -323,27 +533,25 @@ const TrackAttendance = () => {
             
             <Dialog.Footer gap={3}>
               {dialogStep === 1 ? (
-                // STEP 1 BUTTONS
                 <>
                     <Button variant="outline" onClick={handleSaveOnlyMembers}>
                         No
                     </Button>
                     <Button 
                         bg="blue.600" color="white" _hover={{ bg: "blue.700" }}
-                        onClick={() => setDialogStep(2)} // Go to Step 2
+                        onClick={() => setDialogStep(2)}
                     >
                         Yes
                     </Button>
                 </>
               ) : (
-                // STEP 2 BUTTONS
                 <>
                     <Button variant="outline" onClick={() => setDialogStep(1)}>
                         Back
                     </Button>
                     <Button 
                         bg="blue.600" color="white" _hover={{ bg: "blue.700" }}
-                        onClick={handleSaveWithVisitors} // Save with Count
+                        onClick={handleSaveWithVisitors} 
                     >
                         Save
                     </Button>

@@ -75,10 +75,19 @@ Where event id will be in the form e{date}{5 digit random salt} eg e202601110987
     - nationality distribution plot must be filtered on church_id
     - age distribution plot must be filtered on church_id
 
+
+
+--------------------------------------------------------------------------------------
+ToDo 02/26/2026
+--------------------------------------------------------------------------------------
+- Make member id a hex of first name + surname + random 4 digit salt
+    - Make it so that only first name and surname is required
+- By event selection,  change the size of the event dropdown to match the length of text it is holding.
+
 --------------------------------------------------------------------------------------
 NEXT STEPS
 --------------------------------------------------------------------------------------
 
 - Migrate this to a proper backend (do research and form best approach and using best solution)
-- Add basic usage tracking
 - Plan out QR code attendance mechanism
+
