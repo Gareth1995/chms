@@ -61,16 +61,25 @@ function doPost(e) {
     }
 
     if (action === 'getMemberGenderStats') {
-      return getMemberGenderStats();
+      return getMemberGenderStats(data);
     }
 
     if (action === 'getNationalityStats') {
-      return getNationalityStats();
+      return getNationalityStats(data);
+    }
+
+    if (action === 'getAgeStats') {
+      return getAgeStats(data.church_id);
     }
 
     if (action === 'getChurchNames') {
       return getChurchNames();
     }
+
+    if (action === 'getRoleStats') {
+      return getRoleStats(data.church_id);
+    }
+    
   } catch (error) {
     return sendJSON({ status: "error", message: error.toString() });
   }
@@ -173,11 +182,6 @@ function addMember(data) {
   const sheet = ss.getSheetByName("Members");
   const updates_sheet = ss.getSheetByName("Updates");
   const rows = sheet.getDataRange().getValues();
-  
-  // 1. Check for duplicate email
-  const emailIndex = rows[0].indexOf("email_address");
-  const emailExists = rows.slice(1).some(r => String(r[emailIndex]).toLowerCase() === String(data.email).toLowerCase());
-  if (emailExists) return sendJSON({ status: "error", message: "Duplicate email. Cannot add member" });
 
   // 2. Generate ID (hex of first name + last name)
   const fullName = `${data.email}${data.dob}`
@@ -188,6 +192,15 @@ function addMember(data) {
   const member_id = Utilities.base64Encode(
     Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, fullName)
   );
+
+  const idExists = rows.slice(1).some(r => String(r[0]) === String(member_id));
+  
+  if (idExists) {
+    return sendJSON({ 
+      status: "error", 
+      message: "A member with this exact Email and DOB already exists." 
+    });
+  }
 
   // 3. Calculate age
   let age = ""; // Default to empty if no DOB provided
@@ -307,7 +320,8 @@ function addMemberUpdates(data) {
     data.dob,
     data.age,
     data.updateReason,
-    timestampISO
+    timestampISO,
+    data.church_id
   ]);
 
   // Updating the Member table accordingly
@@ -467,101 +481,13 @@ function deleteEvent(data) {
   return sendJSON({ status: "error", message: "Event not found" });
 }
 
-// function addAttendanceBatch(data) {
-//   let sheet = ss.getSheetByName("Attendance");
-  
-//   if (!sheet) {
-//     sheet = ss.insertSheet("Attendance");
-//     // Header order: Member ID | Event | Status | Date | Timestamp
-//     sheet.appendRow(["member_id", "event_name", "status", "date", "timestamp"]); 
-//   }
-
-//   const records = data.records; 
-//   if (!records || records.length === 0) {
-//     return sendJSON({ status: "success", message: "No records to save" });
-//   }
-
-//   // 1. Generate Timestamp only (Date comes from frontend now)
-//   const now = new Date();
-//   const timestamp = now.toISOString();
-
-//   // 2. READ EXISTING DATA
-//   const lastRow = sheet.getLastRow();
-//   let existingData = [];
-//   let existingMap = new Map();
-
-//   if (lastRow > 1) {
-//     existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
-    
-//     existingData.forEach((row, index) => {
-//       // Row: [0]ID, [1]Event, [2]Status, [3]Date, [4]Time
-//       let rowDate = row[3];
-//       if (rowDate instanceof Date) {
-//         rowDate = Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
-//       }
-      
-//       // Key includes Date so we can differentiate events on different days
-//       const key = `${row[0]}_${row[1]}_${rowDate}`; 
-//       existingMap.set(key, index); 
-//     });
-//   }
-
-//   // 3. PROCESS RECORDS
-//   const newRows = [];
-//   let updatesMade = false;
-
-//   records.forEach(record => {
-//     // USE DATE FROM FRONTEND
-//     const recordDate = record.date; 
-
-//     const key = `${record.member_id}_${record.event_name}_${recordDate}`;
-
-//     if (existingMap.has(key)) {
-//       // --- UPDATE EXISTING ROW ---
-//       const rowIndex = existingMap.get(key);
-      
-//       existingData[rowIndex][2] = record.status; // Update Status
-//       existingData[rowIndex][4] = timestamp;     // Update 'Last Modified' Time
-      
-//       updatesMade = true;
-//     } else {
-//       // --- CREATE NEW ROW ---
-//       newRows.push([
-//         record.member_id,
-//         record.event_name,
-//         record.status,
-//         recordDate,      // <--- Use Date from UI
-//         timestamp
-//       ]);
-      
-//       existingMap.set(key, existingData.length + newRows.length); 
-//     }
-//   });
-
-//   // 4. WRITE CHANGES
-//   if (updatesMade && existingData.length > 0) {
-//     sheet.getRange(2, 1, existingData.length, 5).setValues(existingData);
-//   }
-
-//   if (newRows.length > 0) {
-//     sheet.getRange(lastRow + 1, 1, newRows.length, 5).setValues(newRows);
-//   }
-
-//   return sendJSON({ 
-//     status: "success", 
-//     message: "Attendance captured", 
-//     new_rows: newRows.length,
-//     updated_rows: updatesMade ? "Yes" : "No"
-//   });
-// }
-
 function addAttendanceBatch(data) {
   let sheet = ss.getSheetByName("Attendance");
   
   if (!sheet) {
     sheet = ss.insertSheet("Attendance");
-    // Updated Header: Added 'church_id' at the end
-    sheet.appendRow(["member_id", "event_name", "status", "date", "timestamp", "church_id"]); 
+    // Updated Header: 5 columns matching the new schema
+    sheet.appendRow(["event_name", "congregation_count", "date", "timestamp", "church_id"]); 
   }
 
   const records = data.records; // Frontend sends { action: "...", records: [...] }
@@ -569,28 +495,25 @@ function addAttendanceBatch(data) {
     return sendJSON({ status: "success", message: "No records to save" });
   }
 
-  const now = new Date();
-  const timestamp = now.toISOString();
-
-  // 1. READ EXISTING DATA (Now reading 6 columns instead of 5)
+  // 1. READ EXISTING DATA (Now reading 5 columns instead of 6)
   const lastRow = sheet.getLastRow();
   let existingData = [];
   let existingMap = new Map();
 
   if (lastRow > 1) {
-    // Change: Fetch 6 columns to include church_id
-    existingData = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    // Fetch 5 columns
+    existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
     
     existingData.forEach((row, index) => {
-      // Row: [0]ID, [1]Event, [2]Status, [3]Date, [4]Time, [5]ChurchID
-      let rowDate = row[3];
+      // Row: [0]Event, [1]Count, [2]Date, [3]Time, [4]ChurchID
+      let rowDate = row[2];
       if (rowDate instanceof Date) {
         rowDate = Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
       }
       
-      // CRITICAL CHANGE: Include Church ID in the unique key
-      // This ensures we match the correct church's record
-      const key = `${row[0]}_${row[1]}_${rowDate}_${row[5]}`; 
+      // CRITICAL CHANGE: The unique key is now just the Event + Date + Church. 
+      // This allows you to update the count for the same event later if needed!
+      const key = `${row[0]}_${rowDate}_${row[4]}`; 
       existingMap.set(key, index); 
     });
   }
@@ -602,43 +525,39 @@ function addAttendanceBatch(data) {
   records.forEach(record => {
     const recordDate = record.date; 
     
-    // Generate key with church_id
-    const key = `${record.member_id}_${record.event_name}_${recordDate}_${record.church_id}`;
+    // Generate key to see if we already have a count for this event today
+    const key = `${record.event_name}_${recordDate}_${record.church_id}`;
 
     if (existingMap.has(key)) {
       // --- UPDATE EXISTING ROW ---
       const rowIndex = existingMap.get(key);
       
-      existingData[rowIndex][2] = record.status; // Update Status
-      existingData[rowIndex][4] = timestamp;     // Update Time
-      // No need to update church_id, it's part of the key
+      existingData[rowIndex][1] = record.congregation_count; // Update Count
+      existingData[rowIndex][3] = record.timestamp;          // Update Time
       
       updatesMade = true;
     } else {
       // --- CREATE NEW ROW ---
       newRows.push([
-        record.member_id,
         record.event_name,
-        record.status,
+        record.congregation_count,
         recordDate,
-        timestamp,
-        record.church_id // <--- Add Church ID to new row
+        record.timestamp, // Using the timestamp passed from the frontend
+        record.church_id
       ]);
     }
   });
 
   // 3. WRITE CHANGES
-  // Change: Write back 6 columns for updates
+  // Write back 5 columns for updates
   if (updatesMade && existingData.length > 0) {
-    sheet.getRange(2, 1, existingData.length, 6).setValues(existingData);
+    sheet.getRange(2, 1, existingData.length, 5).setValues(existingData);
   }
 
-  // Change: Write 6 columns for new rows
+  // Write 5 columns for new rows
   if (newRows.length > 0) {
-    // Note: If the sheet was empty, we start at lastRow + 1
-    // If we just created the sheet, lastRow is 1 (header).
     const startRow = lastRow === 0 ? 1 : lastRow + 1; 
-    sheet.getRange(startRow, 1, newRows.length, 6).setValues(newRows);
+    sheet.getRange(startRow, 1, newRows.length, 5).setValues(newRows);
   }
 
   return sendJSON({ 
@@ -648,54 +567,6 @@ function addAttendanceBatch(data) {
     updated_rows: updatesMade ? "Yes" : "No"
   });
 }
-
-// function getAttendance(data) {
-//   const sheet = ss.getSheetByName("Attendance");
-//   if (!sheet) return sendJSON({ status: "success", records: [] });
-
-//   const rows = sheet.getDataRange().getValues();
-  
-//   // 1. Get Headers and find the 'church_id' column index dynamically
-//   // This prevents breaking if you change column order
-//   const headers = rows[0]; 
-//   const churchIdIndex = headers.indexOf("church_id");
-
-//   // Safety: If column missing, return empty or error (optional)
-//   if (churchIdIndex === -1) {
-//      return sendJSON({ status: "error", message: "'church_id' column missing in Attendance sheet" });
-//   }
-
-//   // const rows = sheet.getDataRange().getValues();
-//   const targetEvent = data.eventName;
-//   const targetDate = data.date; // Expecting "YYYY-MM-DD"
-//   const targetChurchId = String(data.church_id);
-  
-//   const foundRecords = [];
-
-//   // Skip header (i=1)
-//   for (let i = 1; i < rows.length; i++) {
-//     const row = rows[i];
-//     // Col 1: Event Name, Col 2: Status, Col 3: Date (Indices based on your last structure)
-//     // Your structure: [member_id, event_name, status, date, timestamp]
-    
-//     const eventName = row[1];
-//     const status = row[2];
-//     let dateVal = row[3];
-
-//     const rowChurchId = String(row[churchIdIndex]);
-
-//     // Format date from sheet to string for comparison
-//     if (dateVal instanceof Date) {
-//       dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
-//     }
-
-//     if (eventName === targetEvent && dateVal === targetDate && status == 1 && rowChurchId === targetChurchId)
-//       foundRecords.push(row[0]); // Push member_id
-//     }
-//   }
-
-//   return sendJSON({ status: "success", presentMemberIds: foundRecords });
-// }
 
 function getAttendance(data) {
   const sheet = ss.getSheetByName("Attendance");
@@ -751,7 +622,7 @@ function getAttendance(data) {
   return sendJSON({ status: "success", presentMemberIds: foundRecords });
 }
 
-function getAttendanceByTime() {
+function getAttendanceByTime(data) {
   const sheet = ss.getSheetByName("Attendance");
   
   if (!sheet) {
@@ -761,23 +632,42 @@ function getAttendanceByTime() {
   const rows = sheet.getDataRange().getValues();
   const timeZone = Session.getScriptTimeZone();
 
-  // STRUCTURE: 
-  // { 
-  //   "Divine Service": { daily: {}, monthly: {Jan: Set(), ...}, yearly: {2026: Set()} },
-  //   ...
-  // }
+  // 1. Get Headers & Find Column Indices Dynamically
+  // This ensures we read the correct columns even if the sheet order changes
+  const headers = rows[0]; 
+  const headerMap = {};
+  
+  headers.forEach((header, index) => {
+    headerMap[String(header)] = index;
+  });
+
+  // Verify 'church_id' column exists
+  if (headerMap["church_id"] === undefined) {
+    return sendJSON({ status: "error", message: "'church_id' column missing in Attendance sheet" });
+  }
+
+  // Get the Target Church ID from the request
+  const targetChurchId = String(data.church_id); 
+
   const masterStats = {};
 
   // --- ITERATE DATA ---
+  // Start at i=1 to skip headers
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
+
+    // 2. CHECK CHURCH ID FIRST
+    const rowChurchId = String(row[headerMap["church_id"]]);
+    if (rowChurchId !== targetChurchId) {
+      continue; // Skip rows that don't match the requested church
+    }
     
-    // Column Mapping based on your table:
-    // 0: member_id, 1: event_name, 2: status, 3: date
-    const memberId = String(row[0]); // Ensure ID is a string
-    const eventName = row[1];
-    const status = Number(row[2]); 
-    const rawDate = row[3]; 
+    // 3. Get other values using the map (safer than hardcoded indices)
+    // Fallback indices provided in case map fails, but map is preferred
+    const memberId = String(row[headerMap["member_id"] || 0]); 
+    const eventName = row[headerMap["event_name"] || 1];
+    const status = Number(row[headerMap["status"] || 2]); 
+    const rawDate = row[headerMap["date"] || 3]; 
 
     // Skip invalid rows
     if (status === 0 || !eventName) continue; 
@@ -789,40 +679,40 @@ function getAttendanceByTime() {
     } else {
       dateObj = new Date(rawDate);
     }
+    // Check if date is valid
     if (isNaN(dateObj.getTime())) continue;
 
     // Initialize this Event's bucket if it doesn't exist yet
     if (!masterStats[eventName]) {
       masterStats[eventName] = {
         dailyMap: {},
-        // Initialize months with empty Sets to track unique IDs
         monthsMap: { 
           'Jan': new Set(), 'Feb': new Set(), 'Mar': new Set(), 'Apr': new Set(), 
           'May': new Set(), 'Jun': new Set(), 'Jul': new Set(), 'Aug': new Set(), 
           'Sep': new Set(), 'Oct': new Set(), 'Nov': new Set(), 'Dec': new Set() 
         },
-        yearsMap: {} // Will contain Sets: { '2026': new Set() }
+        yearsMap: {} 
       };
     }
 
     const stats = masterStats[eventName];
 
-    // --- 1. DAILY/WEEKLY (Keep as Total Attendance Volume) ---
-    // We usually keep daily as raw volume (including visitors) for trend analysis
+    // --- 1. DAILY/WEEKLY (Total Volume) ---
     const sortKey = Utilities.formatDate(dateObj, timeZone, "yyyy-MM-dd");
-    const dayLabel = Utilities.formatDate(dateObj, timeZone, "EEE yy-MM-dd");
+    // const dayLabel = Utilities.formatDate(dateObj, timeZone, "EEE yy-MM-dd");
 
     if (!stats.dailyMap[sortKey]) {
-      stats.dailyMap[sortKey] = { label: dayLabel, count: 0 };
+      stats.dailyMap[sortKey] = { label: sortKey, count: 0 };
     }
     stats.dailyMap[sortKey].count += status;
 
-    // --- 2. MONTHLY & YEARLY (Distinct Members, Exclude UV) ---
+    // --- 2. MONTHLY & YEARLY (Distinct Members) ---
+    // Note: We typically exclude visitors ('UV') from distinct member counts
+    // unless you specifically want to count unique visitor IDs (which usually aren't unique).
     if (memberId !== 'UV') {
         const monthLabel = Utilities.formatDate(dateObj, timeZone, "MMM"); 
         const yearLabel = Utilities.formatDate(dateObj, timeZone, "yyyy"); 
 
-        // Add Member ID to the Set (Set automatically handles uniqueness)
         if (stats.monthsMap[monthLabel]) {
             stats.monthsMap[monthLabel].add(memberId);
         }
@@ -840,28 +730,24 @@ function getAttendanceByTime() {
   for (const event in masterStats) {
     const stats = masterStats[event];
 
-    // Format Daily (Standard Count)
+    // Format Daily
     const weeklyData = Object.keys(stats.dailyMap).sort().map(key => ({
       label: stats.dailyMap[key].label,
       count: stats.dailyMap[key].count
     }));
 
-    // Format Monthly (Distinct Count = Set Size)
+    // Format Monthly (Set Size)
     const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthlyData = monthOrder
-      .map(month => ({ 
-          label: month, 
-          count: stats.monthsMap[month].size // Get size of Set
-      }))
-      .filter(item => item.count > 0);
+    const monthlyData = monthOrder.map(month => {
+        const count = stats.monthsMap[month] ? stats.monthsMap[month].size : 0;
+        return { label: month, count: count };
+    }).filter(item => item.count > 0);
 
-    // Format Yearly (Distinct Count = Set Size)
-    const yearlyData = Object.keys(stats.yearsMap).sort()
-      .map(year => ({ 
-          label: year, 
-          count: stats.yearsMap[year].size // Get size of Set
-      }))
-      .filter(item => item.count > 0);
+    // Format Yearly (Set Size)
+    const yearlyData = Object.keys(stats.yearsMap).sort().map(year => ({ 
+        label: year, 
+        count: stats.yearsMap[year].size 
+    }));
 
     finalOutput[event] = {
       weekly: weeklyData,
@@ -876,11 +762,12 @@ function getAttendanceByTime() {
   });
 }
 
-function getMemberGenderStats() {
+
+function getMemberGenderStats(data) {
   const sheet = ss.getSheetByName("Members");
   
+  // Default empty stats if sheet missing
   if (!sheet) {
-    // Return zeros if sheet is missing to prevent crash
     return sendJSON({ 
       status: "success", 
       genderData: [{ name: 'Male', value: 0 }, { name: 'Female', value: 0 }] 
@@ -888,18 +775,42 @@ function getMemberGenderStats() {
   }
 
   const rows = sheet.getDataRange().getValues();
+
+  // 1. Get Headers & Find Column Indices Dynamically
+  // This ensures we look at the right columns even if you move them later.
+  const headers = rows[0]; 
+  const headerMap = {};
+  
+  headers.forEach((header, index) => {
+    headerMap[String(header)] = index;
+  });
+
+  // Verify 'church_id' column exists
+  if (headerMap["church_id"] === undefined) {
+    return sendJSON({ status: "error", message: "'church_id' column missing in Members sheet" });
+  }
+
+  // Get target church ID
+  const targetChurchId = String(data.church_id); 
   
   // Initialize counters
   let maleCount = 0;
   let femaleCount = 0;
 
-  // Iterate rows (Skip header i=1)
+  // 2. Iterate rows (Skip header i=1)
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     
-    // ADJUST THIS INDEX based on your Members sheet column
-    // Example: If Gender is Column C (index 2)
-    const gender = String(row[4]).trim().toLowerCase(); 
+    // Check Church ID Filter
+    const rowChurchId = String(row[headerMap["church_id"]]);
+    if (rowChurchId !== targetChurchId) {
+      continue; // Skip if not this church's member
+    }
+
+    // Get Gender (Using map is safer than hardcoded index)
+    // Fallback to index 4 if map fails, but map should work if header is "gender"
+    const genderColIndex = headerMap["gender"] !== undefined ? headerMap["gender"] : 4;
+    const gender = String(row[genderColIndex] || "").trim().toLowerCase(); 
 
     if (gender === 'male' || gender === 'm') {
       maleCount++;
@@ -908,7 +819,7 @@ function getMemberGenderStats() {
     }
   }
 
-  // Format exactly as Recharts expects
+  // Format for Recharts
   const genderData = [
     { name: 'Male', value: maleCount },
     { name: 'Female', value: femaleCount }
@@ -920,7 +831,114 @@ function getMemberGenderStats() {
   });
 }
 
-function getNationalityStats() {
+function getAgeStats(church_id) {
+  const sheet = ss.getSheetByName("Members");
+  const rows = sheet.getDataRange().getValues();
+  
+  // Initialize our buckets
+  const ageBuckets = {
+    '0-18': 0, // (Will actually only contain 5-18 because of the filter)
+    '19-30': 0,
+    '31-50': 0,
+    '51-70': 0,
+    '70+': 0
+  };
+
+  // Skip header row
+  const dataRows = rows.slice(1);
+
+  dataRows.forEach(row => {
+    const rowChurchId = row[12];
+    let age = row[9];
+
+    // 1. Only count members for the requested church
+    if (rowChurchId === church_id) {
+      
+      // 2. Make sure age is a valid number
+      if (age !== "" && !isNaN(age)) {
+        age = Number(age);
+
+        // 3. FILTER: Ignore anyone younger than 5
+        if (age >= 5) {
+          
+          // 4. Sort into buckets
+          if (age <= 18) {
+            ageBuckets['0-18']++;
+          } else if (age <= 30) {
+            ageBuckets['19-30']++;
+          } else if (age <= 50) {
+            ageBuckets['31-50']++;
+          } else if (age <= 70) {
+            ageBuckets['51-70']++;
+          } else {
+            ageBuckets['70+']++;
+          }
+        }
+      }
+    }
+  });
+
+  // 5. Format the output exactly how Recharts (your frontend) expects it
+  const ageData = [
+    { range: '0-18', count: ageBuckets['0-18'] },
+    { range: '19-30', count: ageBuckets['19-30'] },
+    { range: '31-50', count: ageBuckets['31-50'] },
+    { range: '51-70', count: ageBuckets['51-70'] },
+    { range: '70+', count: ageBuckets['70+'] }
+  ];
+
+  return sendJSON({ status: "success", ageData: ageData });
+}
+
+function getRoleStats(church_id) {
+  const sheet = ss.getSheetByName("Members");
+  const rows = sheet.getDataRange().getValues();
+  
+  // Object to keep track of counts dynamically (e.g., { "Member": 150, "Visitor": 30 })
+  const roleCounts = {};
+
+  // Skip the header row
+  const dataRows = rows.slice(1);
+
+  dataRows.forEach(row => {
+    const rowChurchId = row[12];
+    let role = row[5]; 
+
+    // 1. Only count members for the requested church
+    if (rowChurchId === church_id) {
+      
+      // 2. Clean up the text (just in case there are accidental spaces)
+      if (!role || role.toString().trim() === "") {
+        role = "Unassigned"; // Fallback if someone has no role
+      } else {
+        role = role.toString().trim();
+      }
+
+      // 3. Increment the bucket or start it at 1 if it doesn't exist yet
+      if (roleCounts[role]) {
+        roleCounts[role]++;
+      } else {
+        roleCounts[role] = 1;
+      }
+    }
+  });
+
+  // 4. Format the output EXACTLY how Recharts expects it
+  // This converts our object into the array: [{ role: 'Member', count: 150 }, ...]
+  const roleData = Object.keys(roleCounts).map(key => {
+    return {
+      role: key,
+      count: roleCounts[key]
+    };
+  });
+
+  // Optional: Sort the array from highest count to lowest so the chart looks nice
+  roleData.sort((a, b) => b.count - a.count);
+
+  return sendJSON({ status: "success", roleData: roleData });
+}
+
+function getNationalityStats(data) {
   const sheet = ss.getSheetByName("Members");
   
   if (!sheet) {
@@ -928,18 +946,39 @@ function getNationalityStats() {
   }
 
   const rows = sheet.getDataRange().getValues();
+
+  // 1. Get Headers & Find Column Indices Dynamically
+  const headers = rows[0]; 
+  const headerMap = {};
+  
+  headers.forEach((header, index) => {
+    headerMap[String(header)] = index;
+  });
+
+  // Verify 'church_id' column exists
+  if (headerMap["church_id"] === undefined) {
+    return sendJSON({ status: "error", message: "'church_id' column missing in Members sheet" });
+  }
+
+  const targetChurchId = String(data.church_id); 
   const counts = {};
 
-  // Iterate rows (Skip header i=1)
+  // 2. Iterate rows (Skip header i=1)
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     
-    // --- ADJUST INDEX HERE ---
-    // Assuming Nationality is Column 4 (Index 3)
-    // If it's Column E, use row[4], etc.
-    let nationality = String(row[3]).trim(); 
+    // Check Church ID Filter
+    const rowChurchId = String(row[headerMap["church_id"]]);
+    if (rowChurchId !== targetChurchId) {
+      continue; // Skip if not this church's member
+    }
+
+    // Get Nationality (Use Map, fallback to index 3 if needed)
+    // Adjust fallback index if your nationality column is different
+    const natIndex = headerMap["nationality"] !== undefined ? headerMap["nationality"] : 3;
+    let nationality = String(row[natIndex] || "").trim(); 
     
-    // Normalize text (optional: Capitalize first letter)
+    // Normalize text (Capitalize first letter)
     if (!nationality) nationality = "Unknown";
     nationality = nationality.charAt(0).toUpperCase() + nationality.slice(1).toLowerCase();
 
@@ -955,7 +994,7 @@ function getNationalityStats() {
     value: counts[key]
   }));
 
-  // Optional: Sort by count descending so biggest slices are first
+  // Sort by count descending so biggest slices are first
   nationalityData.sort((a, b) => b.value - a.value);
 
   return sendJSON({
@@ -965,22 +1004,51 @@ function getNationalityStats() {
 }
 
 function testGetNationalityStats() {
-  // 1. Create the mock request object
-  const mockEvent = {
-    postData: {
-      contents: JSON.stringify({
-        action: "getNationalityStats" 
-      })
-    }
+  console.log("--- 🧪 STARTING TEST: getNationalityStats ---");
+
+  // 1. Configure Test Data
+  // Replace this with a valid church_id from your sheet
+  const targetChurchId = "test001"; 
+
+  const mockData = {
+    action: "getNationalityStats",
+    church_id: targetChurchId
   };
 
-  // 2. Call doPost directly to test routing and logic
-  console.log("--- Running testGetNationalityStats ---");
-  const result = doPost(mockEvent);
+  console.log(`Requesting nationality stats for Church ID: [${mockData.church_id}]`);
 
-  // 3. Log the output
-  console.log("Result Payload:");
-  console.log(result.getContent());
+  // 2. Execute Function
+  try {
+    const response = getNationalityStats(mockData);
+    
+    // Parse the JSON response
+    const result = JSON.parse(response.getContent());
+
+    // 3. Analyze Results
+    console.log("--------------------------------");
+    if (result.status === "success") {
+      console.log("✅ API Success");
+      
+      const stats = result.nationalityData;
+      console.log(`Found ${stats.length} unique nationalities.`);
+
+      if (stats.length > 0) {
+        console.log("\n📊 Breakdown:");
+        stats.forEach(item => {
+            console.log(`   - ${item.name}: ${item.value}`);
+        });
+      } else {
+        console.log("⚠️ No members found for this church.");
+      }
+
+    } else {
+      console.error("❌ API Error:", result.message);
+    }
+    console.log("--------------------------------");
+
+  } catch (error) {
+    console.error("❌ CRITICAL FAILURE:", error.toString());
+  }
 }
 
 function getChurchNames() {
@@ -1017,33 +1085,88 @@ function getChurchNames() {
   });
 }
 
+// function testGetAttendanceByTime() {
+//   // 1. Define test cases
+//   const testCases = [
+//     { description: "Fetch ALL events", input: {} },
+//     { description: "Fetch specific event (Divine Service)", input: { eventName: "Divine Service" }},
+//     { description: "Fetch specific event (Prayer Meeting)", input: { eventName: "Prayer Meeting" } }
+//   ];
+
+//   // 2. Run tests
+//   testCases.forEach(test => {
+//     console.log("--- Running Test: " + test.description + " ---");
+    
+//     // Call the function directly
+//     const resultJSON = getAttendanceByTime(test.input);
+    
+//     // Parse the JSON string back to an object for inspection
+//     // Note: In GAS, ContentService returns an object wrapper, so we simulate the output object
+//     // If your sendJSON returns ContentService, we can't parse it easily in the logger.
+//     // Instead, for testing, let's look at the logic inside.
+    
+//     // For debugging, it's easier if we temporarily return the raw object instead of sendJSON
+//     // OR, we can mock sendJSON to just log the output.
+//     console.log("Result Payload:");
+//     console.log(resultJSON.getContent()); // getContent() reveals the stringified JSON
+//   });
+// }
 function testGetAttendanceByTime() {
-  // 1. Define test cases
-  const testCases = [
-    { description: "Fetch ALL events", input: {} },
-    { description: "Fetch specific event (Divine Service)", input: { eventName: "Divine Service" }},
-    { description: "Fetch specific event (Prayer Meeting)", input: { eventName: "Prayer Meeting" } }
-  ];
+  console.log("--- 🧪 STARTING TEST: getAttendanceByTime ---");
 
-  // 2. Run tests
-  testCases.forEach(test => {
-    console.log("--- Running Test: " + test.description + " ---");
+  // 1. Configure Test Data
+  // Ensure your 'Attendance' sheet has rows with this specific church_id
+  const targetChurchId = "test001"; 
+
+  const mockData = {
+    action: "getAttendanceByTime",
+    church_id: targetChurchId 
+  };
+
+  console.log(`Requesting stats for Church ID: [${mockData.church_id}]`);
+
+  // 2. Execute Function
+  try {
+    // We pass the mock object directly, just like the router would
+    const response = getAttendanceByTime(mockData);
     
-    // Call the function directly
-    const resultJSON = getAttendanceByTime(test.input);
-    
-    // Parse the JSON string back to an object for inspection
-    // Note: In GAS, ContentService returns an object wrapper, so we simulate the output object
-    // If your sendJSON returns ContentService, we can't parse it easily in the logger.
-    // Instead, for testing, let's look at the logic inside.
-    
-    // For debugging, it's easier if we temporarily return the raw object instead of sendJSON
-    // OR, we can mock sendJSON to just log the output.
-    console.log("Result Payload:");
-    console.log(resultJSON.getContent()); // getContent() reveals the stringified JSON
-  });
+    // Parse the returned JSON content
+    const result = JSON.parse(response.getContent());
+
+    // 3. Analyze Results
+    console.log("--------------------------------");
+    if (result.status === "success") {
+      console.log("✅ API Success");
+      
+      const events = Object.keys(result.data);
+      console.log(`Found ${events.length} unique event types for this church.`);
+
+      if (events.length > 0) {
+        // Log details for the first event found to verify structure
+        const sampleEvent = events[0];
+        const stats = result.data[sampleEvent];
+
+        console.log(`\n📊 Sample Data for event: "${sampleEvent}"`);
+        console.log(`   - Weekly Records: ${stats.weekly.length}`);
+        console.log(`   - Monthly Records: ${stats.monthly.length}`);
+        console.log(`   - Yearly Records: ${stats.yearly.length}`);
+        
+        // Print the actual data arrays for inspection
+        console.log("\n   Daily/Weekly breakdown:", JSON.stringify(stats.weekly));
+        console.log("   Monthly breakdown:", JSON.stringify(stats.monthly));
+      } else {
+        console.log("⚠️ No attendance records found for this church ID.");
+      }
+
+    } else {
+      console.error("❌ API Error:", result.message);
+    }
+    console.log("--------------------------------");
+
+  } catch (error) {
+    console.error("❌ CRITICAL FAILURE:", error.toString());
+  }
 }
-
 // testing functions
 // function testAddAttendanceBatch() {
 //   console.log("--- 🧪 STARTING TEST: addAttendanceBatch ---");
@@ -1273,45 +1396,53 @@ function testGetChurchNames(){
 }
 
 function testGetMemberGenderStats() {
-  // 1. Create the mock request object
-  const mockEvent = {
-    postData: {
-      contents: JSON.stringify({
-        action: "getMemberGenderStats" 
-      })
-    }
+  console.log("--- 🧪 STARTING TEST: getMemberGenderStats ---");
+
+  // 1. Configure Test Data
+  // Replace this with a church_id that actually has members in your sheet
+  const targetChurchId = "test001"; 
+
+  const mockData = {
+    action: "getMemberGenderStats",
+    church_id: targetChurchId
   };
 
-  // 2. Call doPost directly
-  console.log("--- Running testGetMemberStats ---");
-  const result = doPost(mockEvent);
+  console.log(`Requesting gender stats for Church ID: [${mockData.church_id}]`);
 
-  // 3. Log the output to verify the JSON structure
-  // We use .getContent() because doPost returns a special ContentService object
-  console.log("Result Payload:");
-  console.log(result.getContent());
-}
+  // 2. Execute Function
+  try {
+    // Pass the mock object directly
+    const response = getMemberGenderStats(mockData);
+    
+    // Parse the JSON response
+    const result = JSON.parse(response.getContent());
 
-function testRegistrationLogic() {
-  // 1. Create fake data (mocking what React would send)
-  const mockEvent = {
-    postData: {
-      contents: JSON.stringify({
-        action: "registerUser",
-        firstName: "Test",
-        lastName: "User",
-        nationality: "South African",
-        church_id: "test01",
-        email: "test" + new Date().getTime() + "@example.com", // Random email so it doesn't fail on duplicates
-        cell: "1234567890",
-        password: "secretpassword123"
-      })
+    // 3. Analyze Results
+    console.log("--------------------------------");
+    if (result.status === "success") {
+      console.log("✅ API Success");
+      
+      const genderData = result.genderData;
+      // Expected format: [{ name: 'Male', value: X }, { name: 'Female', value: Y }]
+      
+      // Helper to find specific gender count for logging
+      const maleStat = genderData.find(item => item.name === 'Male');
+      const femaleStat = genderData.find(item => item.name === 'Female');
+
+      console.log(`\n📊 Gender Breakdown for ${targetChurchId}:`);
+      console.log(`   - 👨 Male:   ${maleStat ? maleStat.value : 0}`);
+      console.log(`   - 👩 Female: ${femaleStat ? femaleStat.value : 0}`);
+      
+      console.log("\n   Full Response:", JSON.stringify(genderData));
+
+    } else {
+      console.error("❌ API Error:", result.message);
     }
-  };
+    console.log("--------------------------------");
 
-  // 2. Call your main function directly
-  // const result = doPost(mockEvent);
-  doPost(mockEvent);
+  } catch (error) {
+    console.error("❌ CRITICAL FAILURE:", error.toString());
+  }
 }
 
 // testing registration
