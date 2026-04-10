@@ -27,21 +27,6 @@ export const registerUser = async (userData) => {
 export const loginUser = async (email, password) => {
     console.log(email, password);
 
-    // try {
-    //     const response = await fetch(GOOGLE_SCRIPT_URL, {
-    //     method: "POST",
-    //     body: JSON.stringify({
-    //         action: "loginUser",
-    //         email: email,
-    //         password: password
-    //         })
-    //     });
-    //     return await response.json();
-    // } catch (error) {
-    //     console.error("Login failed:", error);
-    //     return { status: "error", message: "Network error" };
-    // }
-
     try {
         // Use the smart retry helper here!
         return await fetchWithRetry(GOOGLE_SCRIPT_URL, {
